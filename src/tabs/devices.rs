@@ -1,6 +1,6 @@
 //! Pestaña a) Dispositivos de la red local.
 
-use super::{Ctx, Tab};
+use super::{Action, Ctx, Tab};
 use crate::core::state::{self, Device};
 use crate::util;
 use ratatui::crossterm::event::{KeyCode, KeyEvent};
@@ -21,13 +21,15 @@ pub struct Devices {
     table: TableState,
     sort: Sort,
     detail: bool,
+    confirm_cap: bool, // esperando «s/n» para dar CAP_NET_RAW
+    msg: String,
 }
 
 impl Devices {
     pub fn new() -> Self {
         let mut table = TableState::default();
         table.select(Some(0));
-        Devices { table, sort: Sort::Ip, detail: false }
+        Devices { table, sort: Sort::Ip, detail: false, confirm_cap: false, msg: String::new() }
     }
 }
 
@@ -47,10 +49,21 @@ impl Tab for Devices {
     }
 
     fn help(&self) -> &'static str {
-        "↑↓ mover · Enter detalle · s ordenar · r reescanear"
+        "↑↓ mover · Enter detalle · s ordenar · r reescanear · c activar TTL (sudo setcap)"
+    }
+
+    fn capturing_input(&self) -> bool {
+        self.confirm_cap
     }
 
     fn on_key(&mut self, key: KeyEvent, ctx: &Ctx) {
+        if self.confirm_cap {
+            self.confirm_cap = false;
+            if matches!(key.code, KeyCode::Char('s') | KeyCode::Char('S') | KeyCode::Char('y')) {
+                ctx.request(Action::GrantRawCap);
+            }
+            return;
+        }
         let n = state::lock(&ctx.shared).devices.len();
         let sel = self.table.selected().unwrap_or(0);
         match key.code {
@@ -68,6 +81,13 @@ impl Tab for Devices {
                 }
             }
             KeyCode::Char('r') => state::lock(&ctx.shared).force_scan = true,
+            KeyCode::Char('c') => {
+                if state::lock(&ctx.shared).raw_icmp {
+                    self.msg = "CAP_NET_RAW ya está activo".into();
+                } else {
+                    self.confirm_cap = true;
+                }
+            }
             _ => {}
         }
     }
@@ -115,7 +135,16 @@ impl Tab for Devices {
                     .join(" · "),
                 ),
             ]),
-            Line::styled(format!(" {flow_txt}"), Style::new().fg(Color::DarkGray)),
+            if self.confirm_cap {
+                Line::styled(
+                    format!(" ¿Ejecutar «{}»? Pedirá tu contraseña de sudo y reiniciará la app.   s = sí · otra tecla = no", crate::elevate::command_line()),
+                    Style::new().fg(Color::Yellow).bold(),
+                )
+            } else if !self.msg.is_empty() {
+                Line::styled(format!(" {}", self.msg), Style::new().fg(Color::Green))
+            } else {
+                Line::styled(format!(" {flow_txt}"), Style::new().fg(Color::DarkGray))
+            },
         ]);
 
         let detail_h = if self.detail { 8 } else { 0 };

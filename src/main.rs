@@ -5,6 +5,7 @@
 mod app;
 mod config;
 mod core;
+mod elevate;
 mod net;
 mod once;
 mod tabs;
@@ -20,6 +21,17 @@ fn main() {
             std::process::exit(2);
         }
     };
+    if cfg.setcap {
+        println!("Se ejecutará: {}", elevate::command_line());
+        match elevate::grant_raw_cap() {
+            Ok(()) => println!("Hecho: lanwatch ya puede medir el TTL (CAP_NET_RAW)."),
+            Err(e) => {
+                eprintln!("lanwatch: {e}");
+                std::process::exit(1);
+            }
+        }
+        return;
+    }
     let iface = match net::iface::detect(cfg.iface.as_deref()) {
         Ok(i) => i,
         Err(e) => {
@@ -33,7 +45,7 @@ fn main() {
         once::run(&shared);
         return;
     }
-    if let Err(e) = app::run(tabs::Ctx { shared, cfg }) {
+    if let Err(e) = app::run(tabs::Ctx::new(shared, cfg)) {
         eprintln!("lanwatch: {e}");
         std::process::exit(1);
     }

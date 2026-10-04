@@ -1,7 +1,8 @@
 //! Bucle principal de la interfaz. Redibuja solo al pulsar una tecla o con el reloj de la
 //! pestaña (1 s en reposo, 200 ms si hay algo en curso): en reposo apenas consume CPU.
 
-use crate::tabs::{self, Ctx};
+use crate::elevate;
+use crate::tabs::{self, Action, Ctx};
 use ratatui::crossterm::event::{self, Event, KeyCode, KeyEventKind, KeyModifiers};
 use ratatui::layout::{Constraint, Layout};
 use ratatui::style::{Color, Modifier, Style};
@@ -57,6 +58,25 @@ pub fn run(ctx: Ctx) -> io::Result<()> {
                         }
                     }
                     tabs[cur].on_key(k, &ctx);
+                    for action in ctx.take_actions() {
+                        match action {
+                            Action::GrantRawCap => {
+                                // Se sale de la pantalla de la app para que sudo pueda pedir la contraseña.
+                                ratatui::restore();
+                                println!("\nSe ejecutará: {}\n", elevate::command_line());
+                                match elevate::grant_raw_cap() {
+                                    Ok(()) => {
+                                        println!("\nHecho. Reiniciando lanwatch para aplicar el permiso…");
+                                        eprintln!("lanwatch: {}", elevate::reexec());
+                                    }
+                                    Err(e) => eprintln!("\nlanwatch: {e}"),
+                                }
+                                println!("Pulsa Enter para volver a la app.");
+                                let _ = io::stdin().read_line(&mut String::new());
+                                terminal = ratatui::init();
+                            }
+                        }
+                    }
                 }
             } else {
                 tabs[cur].on_tick(&ctx);

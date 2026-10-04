@@ -17,12 +17,13 @@ pub struct Config {
     pub snmp: Option<SnmpCfg>,
     pub portscan: bool,
     pub scan_secs: u64,
+    pub setcap: bool, // da CAP_NET_RAW al binario (pide sudo) y sale
     pub once: bool, // modo sin interfaz: escanea una vez, imprime la tabla y sale
 }
 
 impl Default for Config {
     fn default() -> Self {
-        Config { iface: None, netflow_port: Some(2055), snmp: None, portscan: true, scan_secs: 60, once: false }
+        Config { iface: None, netflow_port: Some(2055), snmp: None, portscan: true, scan_secs: 60, setcap: false, once: false }
     }
 }
 
@@ -37,6 +38,7 @@ USO: lanwatch [opciones]
                               contadores del router por SNMP v2c (host = puerta de enlace)
   --portscan <on|off>         escaneo de puertos de los dispositivos (on)
   --scan-interval <segundos>  cada cuánto se barre la red (60)
+  --setcap                    da CAP_NET_RAW al binario (sudo) para medir el TTL; también en la app (tecla c)
   --once                      sin interfaz: escanea una vez, imprime los dispositivos y sale
   --help, --version
 
@@ -68,6 +70,7 @@ impl Config {
                     std::process::exit(0);
                 }
                 "--once" => c.once = true,
+                "--setcap" => c.setcap = true,
                 "--version" | "-V" => {
                     println!("lanwatch {}", env!("CARGO_PKG_VERSION"));
                     std::process::exit(0);

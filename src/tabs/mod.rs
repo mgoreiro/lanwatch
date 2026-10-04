@@ -6,18 +6,39 @@ use crate::core::state::Shared;
 use ratatui::crossterm::event::KeyEvent;
 use ratatui::layout::Rect;
 use ratatui::Frame;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 pub mod devices;
 pub mod dns;
 pub mod gateway;
 pub mod speed;
 
+/// Acciones que una pestaña no puede hacer por sí sola porque afectan a la terminal o al proceso.
+/// La pestaña las pide con `Ctx::request` y `app.rs` las ejecuta.
+#[derive(Debug, PartialEq)]
+pub enum Action {
+    /// Dar `CAP_NET_RAW` al binario con `sudo setcap` y relanzar (ver `elevate.rs`).
+    GrantRawCap,
+}
+
 /// Contexto que reciben todas las pestañas.
 pub struct Ctx {
     pub shared: Shared,
     #[allow(dead_code)] // disponible para pestañas futuras
     pub cfg: Arc<Config>,
+    pub actions: Mutex<Vec<Action>>,
+}
+
+impl Ctx {
+    pub fn new(shared: Shared, cfg: Arc<Config>) -> Ctx {
+        Ctx { shared, cfg, actions: Mutex::new(Vec::new()) }
+    }
+    pub fn request(&self, a: Action) {
+        self.actions.lock().unwrap_or_else(|e| e.into_inner()).push(a);
+    }
+    pub fn take_actions(&self) -> Vec<Action> {
+        std::mem::take(&mut *self.actions.lock().unwrap_or_else(|e| e.into_inner()))
+    }
 }
 
 pub trait Tab {
@@ -75,7 +96,7 @@ mod tests {
             st.gateway.hist_in = (0..100u64).map(|x| x * 1000).collect();
             st.gateway.hist_out = (0..100u64).map(|x| (100 - x) * 500).collect();
         }
-        Ctx { shared, cfg: Arc::new(Config::default()) }
+        Ctx::new(shared, Arc::new(Config::default()))
     }
 
     /// Dibuja cada pestaña en un terminal virtual (comprueba que no haya pánicos ni desbordes).
@@ -90,5 +111,33 @@ mod tests {
             println!("===== {} =====\n{text}", tab.title());
             assert!(!text.trim().is_empty());
         }
+    }
+
+    fn key(c: char) -> ratatui::crossterm::event::KeyEvent {
+        ratatui::crossterm::event::KeyEvent::new(ratatui::crossterm::event::KeyCode::Char(c), ratatui::crossterm::event::KeyModifiers::NONE)
+    }
+
+    /// `c` pide confirmación (y suspende los atajos globales); solo «s» lanza la acción.
+    #[test]
+    fn dar_cap_net_raw_pide_confirmacion() {
+        let ctx = ctx();
+        let mut t = devices::Devices::new();
+        t.on_key(key('c'), &ctx);
+        assert!(t.capturing_input());
+        t.on_key(key('n'), &ctx);
+        assert!(!t.capturing_input());
+        assert!(ctx.take_actions().is_empty());
+        t.on_key(key('c'), &ctx);
+        t.on_key(key('s'), &ctx);
+        assert_eq!(ctx.take_actions(), vec![Action::GrantRawCap]);
+    }
+
+    #[test]
+    fn no_pide_nada_si_ya_hay_cap_net_raw() {
+        let ctx = ctx();
+        state::lock(&ctx.shared).raw_icmp = true;
+        let mut t = devices::Devices::new();
+        t.on_key(key('c'), &ctx);
+        assert!(!t.capturing_input());
     }
 }
