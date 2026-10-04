@@ -45,3 +45,50 @@ pub fn all() -> Vec<Box<dyn Tab>> {
         Box::new(speed::SpeedTab::new()),
     ]
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::core::state::{self, Device, FlowCounters};
+    use crate::net::iface::IfaceInfo;
+    use ratatui::{backend::TestBackend, Terminal};
+    use std::net::Ipv4Addr;
+    use std::time::Instant;
+
+    fn ctx() -> Ctx {
+        let iface = IfaceInfo { name: "end0".into(), ip: Ipv4Addr::new(192, 168, 1, 232), prefix: 24, gateway: Some(Ipv4Addr::new(192, 168, 1, 1)), mac: [2, 0, 0xab, 1, 2, 3] };
+        let shared = state::new(iface);
+        {
+            let mut st = state::lock(&shared);
+            let now = Instant::now();
+            for (i, (name, vendor, os, ports)) in [("router", "Ubiquiti", "Router / puerta de enlace", vec![22, 80, 443]), ("iphone", "Apple", "iOS (iPhone/iPad)", vec![62078])].into_iter().enumerate() {
+                let ip = Ipv4Addr::new(192, 168, 1, 1 + i as u8 * 100);
+                st.devices.insert(ip, Device {
+                    ip, mac: [0xf0, 0x9f, 0xc2, 0, 0, i as u8], vendor: vendor.into(), hostname: Some(name.into()), ttl: Some(64), ports, scanned: Some(now),
+                    os: os.into(), first_seen: now, last_seen: now, online: true, is_self: false, is_gateway: i == 0,
+                    flow: FlowCounters { in_bytes: 5_000_000, out_bytes: 900_000, in_bps: 120_000.0, out_bps: 8_000.0, seen: true },
+                });
+            }
+            st.flow.listening = Some(2055);
+            st.gateway.source = "SNMP 192.168.1.1 · eth0".into();
+            st.gateway.in_bps = 2_500_000.0;
+            st.gateway.hist_in = (0..100u64).map(|x| x * 1000).collect();
+            st.gateway.hist_out = (0..100u64).map(|x| (100 - x) * 500).collect();
+        }
+        Ctx { shared, cfg: Arc::new(Config::default()) }
+    }
+
+    /// Dibuja cada pestaña en un terminal virtual (comprueba que no haya pánicos ni desbordes).
+    /// Con `cargo test render -- --nocapture` se ve el resultado.
+    #[test]
+    fn render_de_todas_las_pestanas() {
+        let ctx = ctx();
+        for mut tab in all() {
+            let mut term = Terminal::new(TestBackend::new(130, 22)).unwrap();
+            term.draw(|f| tab.draw(f, f.area(), &ctx)).unwrap();
+            let text: String = term.backend().buffer().content().chunks(130).map(|r| r.iter().map(|c| c.symbol()).collect::<String>().trim_end().to_string() + "\n").collect();
+            println!("===== {} =====\n{text}", tab.title());
+            assert!(!text.trim().is_empty());
+        }
+    }
+}

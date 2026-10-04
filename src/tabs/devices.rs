@@ -97,20 +97,23 @@ impl Tab for Devices {
         } else {
             st.last_sweep.map(|t| format!("último barrido hace {}", util::ago(t.elapsed().as_secs()))).unwrap_or_default()
         };
-        let icmp = if st.raw_icmp { "" } else { " · sin CAP_NET_RAW: sin TTL (ver README)" };
+        let icmp = if st.raw_icmp { "" } else { "sin CAP_NET_RAW: sin TTL (ver README)" };
         let info = Paragraph::new(vec![
             Line::from(vec![
                 Span::styled(format!(" {} ", st.iface.name), Style::new().bold()),
-                Span::raw(format!(
-                    "{}/{} · puerta de enlace {} · {} dispositivos ({} en línea) · {}{}",
-                    st.iface.ip,
-                    st.iface.prefix,
-                    st.iface.gateway.map(|g| g.to_string()).unwrap_or("?".into()),
-                    devs.len(),
-                    online,
-                    scan,
-                    icmp
-                )),
+                Span::raw(
+                    [
+                        format!("{}/{}", st.iface.ip, st.iface.prefix),
+                        format!("puerta de enlace {}", st.iface.gateway.map(|g| g.to_string()).unwrap_or("?".into())),
+                        format!("{} dispositivos ({} en línea)", devs.len(), online),
+                        scan,
+                        icmp.to_string(),
+                    ]
+                    .into_iter()
+                    .filter(|p| !p.is_empty())
+                    .collect::<Vec<_>>()
+                    .join(" · "),
+                ),
             ]),
             Line::styled(format!(" {flow_txt}"), Style::new().fg(Color::DarkGray)),
         ]);
@@ -139,9 +142,9 @@ impl Tab for Devices {
                 Row::new(vec![
                     Cell::from(Line::from(vec![dot, Span::raw(format!(" {}{}", d.ip, tag))])),
                     Cell::from(util::mac_str(&d.mac)),
-                    Cell::from(util::trunc(&d.vendor, 22)),
-                    Cell::from(util::trunc(d.hostname.as_deref().unwrap_or(""), 18)),
-                    Cell::from(util::trunc(&d.os, 24)),
+                    Cell::from(util::trunc(&d.vendor, 20)),
+                    Cell::from(util::trunc(d.hostname.as_deref().unwrap_or(""), 15)),
+                    Cell::from(util::trunc(&d.os, 22)),
                     Cell::from(ports_str(d, 28)),
                     rate_cell(d, d.flow.in_bps),
                     rate_cell(d, d.flow.out_bps),
@@ -164,12 +167,12 @@ impl Tab for Devices {
         let table = Table::new(
             rows,
             [
-                Constraint::Length(21),
+                Constraint::Length(19),
                 Constraint::Length(17),
+                Constraint::Length(20),
+                Constraint::Length(15),
                 Constraint::Length(22),
-                Constraint::Length(18),
-                Constraint::Length(24),
-                Constraint::Min(12),
+                Constraint::Min(16),
                 Constraint::Length(11),
                 Constraint::Length(11),
             ],
