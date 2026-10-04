@@ -4,6 +4,9 @@ version = "0.2.0"
 edition = "2021"
 description = "Monitor de red en terminal, de mínimo consumo, para Linux/ARM (Orange Pi)"
 license = "GPL-3.0-or-later"
+authors = ["mgoreiro <mgoreiro@gmail.com>"]
+repository = "https://github.com/mgoreiro/lanwatch"
+homepage = "https://github.com/mgoreiro"
 
 [dependencies]
 ratatui = { version = "0.29", default-features = false, features = ["crossterm"] }

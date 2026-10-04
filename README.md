@@ -16,8 +16,9 @@ En una Orange Pi Zero 3: **~3,6 MB de RAM** y **~1 % de un núcleo** de media co
 | 4 | **Velocidad** | Latencia, jitter, descarga y subida contra servidores públicos (LibreSpeed + Cloudflare). Lista para elegir a mano o **modo automático** (`a`): el de menor latencia. |
 
 | 5 | **Ayuda** | Guía de la aplicación y, paso a paso, cómo activar **NetFlow** y SNMP en el router (con la IP real de esta máquina y el estado actual). El texto sale de `docs/AYUDA.md` y `docs/EDGEROUTER.md`. |
+| 6 | **About** | Datos del proyecto y del autor (de `Cargo.toml`) y estado de esta instalación: ejecutable, configuración, permisos, SNMP, NetFlow. |
 
-Teclas globales: `Tab` / `Shift+Tab` / `1`‑`5` cambian de pestaña, `q` sale. Cada pestaña muestra las suyas abajo.
+Teclas globales: `Tab` / `Shift+Tab` / `1`‑`6` cambian de pestaña, `q` sale. Cada pestaña muestra las suyas abajo.
 
 ## Instalación
 

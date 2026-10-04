@@ -6,7 +6,7 @@ del DNS y la velocidad de la conexión. Consume muy poco (unos 4 MB de RAM).
 # Teclas
 
 ```
-Tab / Mayús+Tab   cambiar de pestaña        1-5   ir directo a una pestaña
+Tab / Mayús+Tab   cambiar de pestaña        1-6   ir directo a una pestaña
 q  salir          Ctrl+C  salir             ↑ ↓   mover / desplazar
 ```
 
@@ -64,6 +64,11 @@ Enter  probar el servidor elegido de la lista       Esc  cancelar        r  reca
 - Cada medida dura unos 8 s por sentido y usa toda la línea: evita lanzarla durante una videollamada.
 - Los servidores públicos limitan a quien los usa mucho. Si responde «rechazada» o «403», elige otro o espera.
 - La subida depende mucho del servidor elegido; compara varios antes de sacar conclusiones.
+
+# 5 · Ayuda y 6 · About
+
+La ayuda es esta guía. **About** muestra los datos del proyecto y del autor y, sobre todo, el estado de esta
+instalación (ejecutable, fichero de configuración, permisos, SNMP, NetFlow…): cópialo si necesitas pedir ayuda.
 
 # Opciones de línea de órdenes
 

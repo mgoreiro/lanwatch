@@ -56,6 +56,8 @@ pub struct FlowStatus {
     pub packets: u64,
     pub flows: u64,
     pub unsupported: u64,
+    pub version: Option<u16>,     // versión del protocolo recibido (5, 9 o 10 = IPFIX)
+    pub waiting_template: u64,    // datos recibidos antes de conocer su plantilla
     pub last: Option<Instant>,
     pub error: Option<String>,
 }

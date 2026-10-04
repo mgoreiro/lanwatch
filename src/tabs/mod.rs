@@ -8,6 +8,7 @@ use ratatui::layout::Rect;
 use ratatui::Frame;
 use std::sync::{Arc, Mutex};
 
+pub mod about;
 pub mod devices;
 pub mod dns;
 pub mod gateway;
@@ -66,6 +67,7 @@ pub fn all() -> Vec<Box<dyn Tab>> {
         Box::new(dns::DnsTab::new()),
         Box::new(speed::SpeedTab::new()),
         Box::new(help::Help::new()),
+        Box::new(about::About::new()),
     ]
 }
 
