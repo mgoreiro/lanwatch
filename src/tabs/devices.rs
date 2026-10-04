@@ -23,13 +23,14 @@ pub struct Devices {
     detail: bool,
     confirm_cap: bool, // esperando «s/n» para dar CAP_NET_RAW
     msg: String,
+    msg_at: Option<std::time::Instant>, // los avisos desaparecen solos
 }
 
 impl Devices {
     pub fn new() -> Self {
         let mut table = TableState::default();
         table.select(Some(0));
-        Devices { table, sort: Sort::Ip, detail: false, confirm_cap: false, msg: String::new() }
+        Devices { table, sort: Sort::Ip, detail: false, confirm_cap: false, msg: String::new(), msg_at: None }
     }
 }
 
@@ -84,6 +85,7 @@ impl Tab for Devices {
             KeyCode::Char('c') => {
                 if state::lock(&ctx.shared).raw_icmp {
                     self.msg = "CAP_NET_RAW ya está activo".into();
+                    self.msg_at = Some(std::time::Instant::now());
                 } else {
                     self.confirm_cap = true;
                 }
@@ -140,7 +142,7 @@ impl Tab for Devices {
                     format!(" ¿Ejecutar «{}»? Pedirá tu contraseña de sudo y reiniciará la app.   s = sí · otra tecla = no", crate::elevate::command_line()),
                     Style::new().fg(Color::Yellow).bold(),
                 )
-            } else if !self.msg.is_empty() {
+            } else if !self.msg.is_empty() && self.msg_at.is_some_and(|t| t.elapsed().as_secs() < 4) {
                 Line::styled(format!(" {}", self.msg), Style::new().fg(Color::Green))
             } else {
                 Line::styled(format!(" {flow_txt}"), Style::new().fg(Color::DarkGray))
