@@ -18,12 +18,13 @@ pub struct Config {
     pub portscan: bool,
     pub scan_secs: u64,
     pub setcap: bool, // da CAP_NET_RAW al binario (pide sudo) y sale
-    pub once: bool, // modo sin interfaz: escanea una vez, imprime la tabla y sale
+    pub once: bool,
+    pub source: Option<String>, // fichero de configuración que se leyó, si hubo // modo sin interfaz: escanea una vez, imprime la tabla y sale
 }
 
 impl Default for Config {
     fn default() -> Self {
-        Config { iface: None, netflow_port: Some(2055), snmp: None, portscan: true, scan_secs: 60, setcap: false, once: false }
+        Config { iface: None, netflow_port: Some(2055), snmp: None, portscan: true, scan_secs: 60, setcap: false, once: false, source: None }
     }
 }
 
@@ -48,9 +49,15 @@ También se leen de ~/.config/lanwatch.conf o /etc/lanwatch.conf (una opción po
 
 impl Config {
     pub fn load() -> Result<Config, String> {
+        Self::parse(conf_paths(), std::env::args().skip(1).collect())
+    }
+
+    /// Fichero (el primero que exista de `paths`) y después los argumentos, que tienen prioridad.
+    pub fn parse(paths: Vec<String>, argv: Vec<String>) -> Result<Config, String> {
         let mut c = Config::default();
-        for path in conf_paths() {
+        for path in paths {
             if let Ok(text) = std::fs::read_to_string(&path) {
+                c.source = Some(path.clone());
                 for (n, line) in text.lines().enumerate() {
                     let line = line.trim();
                     if line.is_empty() || line.starts_with('#') {
@@ -62,7 +69,7 @@ impl Config {
                 break;
             }
         }
-        let mut args = std::env::args().skip(1);
+        let mut args = argv.into_iter();
         while let Some(a) = args.next() {
             match a.as_str() {
                 "--help" | "-h" => {
@@ -147,6 +154,13 @@ pub fn save_path() -> Option<String> {
     })
 }
 
+/// Valor de `snmp=` que hay **ahora mismo en el fichero** (lo que se recuperará al arrancar).
+pub fn persisted_snmp() -> Option<(String, String)> {
+    let path = save_path()?;
+    let text = std::fs::read_to_string(&path).ok()?;
+    text.lines().find_map(|l| l.split_once('=').filter(|(k, _)| k.trim() == "snmp").map(|(_, v)| (path.clone(), v.trim().to_string())))
+}
+
 /// Pone (o quita, con `None`) la línea `snmp=` del fichero conservando el resto.
 pub fn save_snmp_to(path: &str, snmp: Option<&SnmpCfg>) -> Result<(), String> {
     let old = std::fs::read_to_string(path).unwrap_or_default();
@@ -198,5 +212,27 @@ mod tests {
         let mut c = Config::default();
         c.apply("snmp", "public@10.0.0.1/eth0").unwrap();
         assert_eq!(c.snmp.unwrap().to_value(), "public@10.0.0.1/eth0");
+    }
+
+    #[test]
+    fn el_snmp_guardado_se_recupera_al_arrancar() {
+        let path = std::env::temp_dir().join(format!("lanwatch-boot-{}.conf", std::process::id()));
+        let p = path.to_str().unwrap().to_string();
+        let cfg = SnmpCfg { host: Some("192.168.1.1".parse().unwrap()), community: "mi-comunidad".into(), ifname: Some("eth0".into()) };
+        save_snmp_to(&p, Some(&cfg)).unwrap(); // lo que hace el asistente al elegir la interfaz
+        let loaded = Config::parse(vec![p.clone()], vec![]).unwrap(); // lo que hace el arranque
+        let s = loaded.snmp.expect("el SNMP guardado debe cargarse");
+        assert_eq!((s.community.as_str(), s.host, s.ifname.as_deref()), ("mi-comunidad", Some("192.168.1.1".parse().unwrap()), Some("eth0")));
+        assert_eq!(loaded.source.as_deref(), Some(p.as_str()));
+        // un argumento tiene prioridad sobre el fichero
+        let over = Config::parse(vec![p.clone()], vec!["--snmp".into(), "otra@10.0.0.1/eth1".into()]).unwrap();
+        assert_eq!(over.snmp.unwrap().to_value(), "otra@10.0.0.1/eth1");
+        let _ = std::fs::remove_file(&path);
+    }
+
+    #[test]
+    fn sin_fichero_arranca_sin_snmp() {
+        let c = Config::parse(vec!["/no/existe.conf".into()], vec![]).unwrap();
+        assert!(c.snmp.is_none() && c.source.is_none());
     }
 }

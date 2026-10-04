@@ -148,8 +148,8 @@ impl Tab for Gateway {
                         *error = Some("la IP del router no es válida".into());
                         return;
                     };
-                    if community.is_empty() {
-                        *error = Some("falta la comunidad".into());
+                    if community.is_empty() || community.contains('@') || community.contains('/') {
+                        *error = Some("la comunidad no puede estar vacía ni contener «@» o «/»".into());
                         return;
                     }
                     let (comm, found): (String, Found) = (community.clone(), Arc::new(Mutex::new(None)));
@@ -192,8 +192,9 @@ impl Tab for Gateway {
     fn draw(&mut self, f: &mut Frame, area: Rect, ctx: &Ctx) {
         let st = state::lock(&ctx.shared);
         let g = &st.gateway;
+        let snmp_now = st.snmp.clone();
         let gw = st.iface.gateway.map(|x| x.to_string()).unwrap_or("?".into());
-        let [top, a, b] = Layout::vertical([Constraint::Length(7), Constraint::Min(4), Constraint::Min(4)]).areas(area);
+        let [top, a, b] = Layout::vertical([Constraint::Length(8), Constraint::Min(4), Constraint::Min(4)]).areas(area);
 
         let mut lines = vec![
             Line::from(format!("Puerta de enlace: {gw}   ·   Fuente: {}", if g.source.is_empty() { "iniciando…" } else { &g.source })),
@@ -205,6 +206,12 @@ impl Tab for Gateway {
         }
         if let Some(e) = &g.error {
             lines.push(Line::styled(format!("SNMP: {e}"), Style::new().fg(Color::Red)));
+        }
+        if let Some(c) = &snmp_now {
+            lines.push(match config::persisted_snmp() {
+                Some((path, v)) if v == c.to_value() => Line::styled(format!("Guardado en {path}: se recuperará al arrancar"), Style::new().fg(Color::DarkGray)),
+                _ => Line::styled("Aviso: este SNMP no está en el fichero de configuración; se perderá al salir (vuelve a hacerlo con s)", Style::new().fg(Color::Yellow)),
+            });
         }
         if !self.msg.is_empty() && self.msg_at.is_some_and(|t| t.elapsed().as_secs() < 8) {
             lines.push(Line::styled(self.msg.clone(), Style::new().fg(Color::Green)));

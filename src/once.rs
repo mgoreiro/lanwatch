@@ -13,7 +13,9 @@ macro_rules! out {
     }};
 }
 
-pub fn run(shared: &Shared) {
+pub fn run(shared: &Shared, cfg: &crate::config::Config) {
+    let cfg_source = cfg.source.clone().unwrap_or("(ningún fichero)".into());
+    let snmp_txt = cfg.snmp.as_ref().map(|s| s.to_value()).unwrap_or("no configurado".into());
     let start = Instant::now();
     loop {
         std::thread::sleep(Duration::from_millis(500));
@@ -24,8 +26,31 @@ pub fn run(shared: &Shared) {
             break;
         }
     }
+    // Espera a la primera tasa de la puerta de enlace (SNMP necesita dos lecturas, ~2 s) para poder mostrarla.
+    let gw_wait = Instant::now();
+    while gw_wait.elapsed() < Duration::from_secs(14) {
+        let st = state::lock(shared);
+        if !st.gateway.source.is_empty() && st.gateway.hist_in.len() >= 4 {
+            break;
+        }
+        if st.gateway.error.is_some() && cfg.snmp.is_some() {
+            break;
+        }
+        drop(st);
+        std::thread::sleep(Duration::from_millis(500));
+    }
     let st = state::lock(shared);
     out!("{} · {}/{} · puerta de enlace {}", st.iface.name, st.iface.ip, st.iface.prefix, st.iface.gateway.map(|g| g.to_string()).unwrap_or("?".into()));
+    out!("Configuración: {} · SNMP: {}", cfg_source, snmp_txt);
+    out!(
+        "Puerta de enlace: fuente «{}» · ↓ {} · ↑ {} (pico ↓ {} · ↑ {}){}",
+        if st.gateway.source.is_empty() { "–" } else { &st.gateway.source },
+        util::rate(st.gateway.in_bps),
+        util::rate(st.gateway.out_bps),
+        util::rate(st.gateway.peak_in),
+        util::rate(st.gateway.peak_out),
+        st.gateway.error.as_ref().map(|e| format!(" · error: {e}")).unwrap_or_default()
+    );
     out!("CAP_NET_RAW (TTL): {}", if st.raw_icmp { "sí" } else { "no" });
     out!("{:<16} {:<17} {:<22} {:<18} {:<26} {}", "IP", "MAC", "FABRICANTE", "NOMBRE", "SISTEMA", "PUERTOS");
     for d in st.devices.values().filter(|d| d.online) {

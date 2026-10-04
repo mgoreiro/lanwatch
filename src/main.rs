@@ -42,7 +42,7 @@ fn main() {
     let shared = core::state::new(iface, cfg.snmp.clone());
     core::workers::start(shared.clone(), cfg.clone());
     if cfg.once {
-        once::run(&shared);
+        once::run(&shared, &cfg);
         return;
     }
     if let Err(e) = app::run(tabs::Ctx::new(shared, cfg)) {
