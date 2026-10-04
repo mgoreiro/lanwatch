@@ -1,0 +1,16 @@
+lanwatch (0.2.0) stable; urgency=medium
+
+  * Pestaña de ayuda con la guía de la aplicación y cómo activar NetFlow/SNMP.
+  * Asistente para configurar SNMP desde la pestaña Puerta de enlace (tecla s);
+    la configuración se guarda y se recupera al arrancar.
+  * Acción para dar CAP_NET_RAW desde la aplicación (tecla c) y opción --setcap.
+  * El paquete aplica CAP_NET_RAW en cada instalación y actualización.
+
+ -- mgoreiro <mgoreiro@gmail.com>  Sun, 04 Oct 2026 21:50:00 +0000
+
+lanwatch (0.1.0) stable; urgency=medium
+
+  * Primera versión: dispositivos de la LAN, tráfico de la puerta de enlace,
+    test de DNS y test de velocidad.
+
+ -- mgoreiro <mgoreiro@gmail.com>  Sun, 04 Oct 2026 20:00:00 +0000

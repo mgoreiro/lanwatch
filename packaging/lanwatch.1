@@ -1,0 +1,45 @@
+.TH LANWATCH 1 "octubre 2026" "lanwatch 0.2.0" "Órdenes de usuario"
+.SH NOMBRE
+lanwatch \- monitor de red en terminal de consumo mínimo
+.SH SINOPSIS
+.B lanwatch
+[\fIopciones\fR]
+.SH DESCRIPCIÓN
+Muestra en una interfaz de terminal con pestañas los dispositivos de la red local (IP, MAC, fabricante,
+sistema operativo estimado, puertos abiertos y tráfico), el tráfico de la puerta de enlace, un test de DNS
+y un test de velocidad. La pestaña de ayuda explica cada función y cómo activar NetFlow y SNMP en el router.
+.SH OPCIONES
+.TP
+.BI \-\-iface " nombre"
+Interfaz a vigilar (por defecto, la de la ruta por defecto).
+.TP
+.BI \-\-netflow " puerto|off"
+Puerto UDP del colector NetFlow v5 (2055 por defecto).
+.TP
+.BI \-\-snmp " comunidad[@router][/interfaz]"
+Lee los contadores de la puerta de enlace por SNMP v2c.
+.TP
+.BI \-\-portscan " on|off"
+Activa o desactiva el escaneo de puertos.
+.TP
+.BI \-\-scan\-interval " segundos"
+Intervalo entre barridos de la red (60).
+.TP
+.B \-\-once
+Sin interfaz: escanea una vez, imprime los dispositivos y sale.
+.TP
+.B \-\-setcap
+Concede CAP_NET_RAW al binario (usa sudo) para medir el TTL y sale.
+.TP
+.B \-\-help, \-\-version
+Ayuda y versión.
+.SH FICHEROS
+.TP
+.I ~/.config/lanwatch.conf
+.TQ
+.I /etc/lanwatch.conf
+Opciones, una por línea (clave=valor). Se usa el primero que exista. El asistente de SNMP guarda aquí.
+.SH TECLAS
+Tab / Mayús+Tab o 1\-5 cambian de pestaña; q sale. Cada pestaña indica las suyas en el pie.
+.SH VÉASE TAMBIÉN
+/usr/share/doc/lanwatch/

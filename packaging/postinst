@@ -1,0 +1,15 @@
+#!/bin/sh
+# Da CAP_NET_RAW al binario (mide el TTL por ICMP sin ejecutar como root). Se repite en cada
+# instalación/actualización porque los permisos de fichero se pierden al sustituir el binario.
+set -e
+
+if [ "$1" = "configure" ]; then
+    if command -v setcap >/dev/null 2>&1; then
+        setcap cap_net_raw+ep /usr/bin/lanwatch \
+            || echo "lanwatch: no se pudo aplicar CAP_NET_RAW; funcionará sin medir el TTL" >&2
+    else
+        echo "lanwatch: falta «setcap» (paquete libcap2-bin); funcionará sin medir el TTL" >&2
+    fi
+fi
+
+exit 0

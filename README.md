@@ -19,6 +19,23 @@ En una Orange Pi Zero 3: **~3,6 MB de RAM** y **~1 % de un núcleo** de media co
 
 Teclas globales: `Tab` / `Shift+Tab` / `1`‑`5` cambian de pestaña, `q` sale. Cada pestaña muestra las suyas abajo.
 
+## Instalación
+
+**Paquete Debian/Ubuntu/Raspberry Pi OS (recomendado)** — hay uno para `arm64` y otro para `amd64`:
+
+```bash
+sudo apt install ./lanwatch_0.2.0_arm64.deb     # instala el binario, la página de manual y la documentación
+lanwatch
+```
+
+El paquete da `CAP_NET_RAW` al binario (con `setcap`, recomendado por `libcap2-bin`) en cada instalación y
+**actualización**, así que no hay que repetirlo. Se desinstala con `sudo apt remove lanwatch`; tu configuración
+(`~/.config/lanwatch.conf`) no se toca.
+
+Para generar los paquetes (necesita Docker): `./scripts/build-deb.sh [arm64|amd64|all] [--lint]` → `dist/lanwatch_<versión>_<arch>.deb`.
+
+**Binario suelto:** `./scripts/build-aarch64.sh` y copiar `dist/lanwatch-aarch64` donde quieras; para el TTL, tecla `c` o `--setcap`.
+
 ## Uso
 
 ```bash
@@ -50,6 +67,7 @@ cargo run                         # en cualquier Linux/macOS (el descubrimiento 
 cargo test                        # pruebas unitarias
 cargo test -- --ignored --nocapture   # pruebas con red (DNS, lista y latencia de servidores)
 ./scripts/build-aarch64.sh        # binario estático para Orange Pi / Raspberry Pi 64 bit, vía Docker
+./scripts/build-deb.sh            # paquetes .deb (arm64 y amd64)
 scp dist/lanwatch-aarch64 usuario@pi:~/lanwatch
 ```
 

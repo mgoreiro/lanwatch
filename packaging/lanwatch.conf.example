@@ -1,0 +1,11 @@
+# Copia este fichero a ~/.config/lanwatch.conf (o /etc/lanwatch.conf para todos los usuarios).
+# Una opción por línea, sin los guiones; los argumentos de línea de órdenes tienen prioridad.
+#
+# OJO: si existe /etc/lanwatch.conf, la aplicación lo usa en lugar del de ~/.config, y solo root
+# puede escribirlo: los cambios hechos desde la interfaz (p. ej. el asistente de SNMP) no se podrían guardar.
+
+#iface=end0
+#netflow=2055          # puerto UDP del colector NetFlow v5, u «off»
+#snmp=public@192.168.1.1/eth0      # comunidad[@router][/interfaz]; mejor configurarlo desde la pestaña
+#portscan=on
+#scan-interval=60

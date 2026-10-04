@@ -54,3 +54,11 @@ Se añaden en `Config::apply` (`config.rs`); sirven igual por argumento y por fi
 `data/oui.bin` (fabricantes por MAC) se genera con `tools/gen_oui.py` a partir de los CSV públicos de la IEEE
 (MA-L, MA-M y MA-S) y se incluye en el binario con `include_bytes!`; se consulta por búsqueda binaria
 sin cargarlo en memoria.
+
+## Empaquetado
+
+`scripts/build-deb.sh` compila el binario estático (musl, con Docker) y monta el `.deb` con `dpkg-deb`; los
+ficheros del paquete viven en `packaging/` (`postinst`, `copyright`, `changelog`, página de manual, ejemplo de
+configuración y excepciones de lintian). El `postinst` aplica `CAP_NET_RAW`. No se instala `/etc/lanwatch.conf`
+a propósito: la aplicación prefiere ese fichero si existe y no podría guardar en él los cambios hechos desde la interfaz.
+Al subir de versión: `Cargo.toml` y una entrada nueva en `packaging/changelog`.

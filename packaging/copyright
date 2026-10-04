@@ -1,0 +1,28 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: lanwatch
+Source: https://github.com/mgoreiro/lanwatch
+
+Files: *
+Copyright: 2026 mgoreiro
+License: GPL-3+
+
+Files: data/oui.bin
+Copyright: IEEE Registration Authority
+Comment: Base de fabricantes por MAC generada (tools/gen_oui.py) a partir de los
+ registros públicos de asignaciones de la IEEE (MA-L, MA-M y MA-S).
+License: public-domain
+ Datos de asignaciones publicados por la IEEE para su consulta pública.
+
+License: GPL-3+
+ This program is free software: you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+ .
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+ .
+ On Debian systems, the complete text of the GNU General Public
+ License version 3 can be found in /usr/share/common-licenses/GPL-3.

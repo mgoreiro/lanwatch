@@ -1,0 +1,7 @@
+# Decisiones de diseño, no defectos:
+# - Binario estático (musl): un solo fichero sin dependencias, pensado para placas ARM con instalaciones mínimas.
+# - La base de fabricantes por MAC (IEEE) va embebida para no leerla ni cargarla en memoria al arrancar.
+lanwatch: statically-linked-binary [usr/bin/lanwatch]
+lanwatch: embedded-library ieee-data [usr/bin/lanwatch]
+# Ejecutable estático «static-pie» (musl): lintian lo toma por una biblioteca compartida sin dependencias.
+lanwatch: shared-library-lacks-prerequisites [usr/bin/lanwatch]
