@@ -4,7 +4,7 @@
 
 use super::state::{self, Device, FlowCounters, Shared};
 use crate::config::Config;
-use crate::net::{discovery, iface::IfaceInfo, netflow, osdetect, oui, probe, snmp};
+use crate::net::{discovery, fingerprint, iface::IfaceInfo, netflow, osdetect, oui, probe, snmp};
 use std::net::Ipv4Addr;
 use std::sync::mpsc::{self, Sender};
 use std::sync::Arc;
@@ -46,9 +46,14 @@ fn new_device(ip: Ipv4Addr, mac: [u8; 6], iface: &IfaceInfo) -> Device {
         ports: Vec::new(),
         scanned: None,
         os: String::new(),
+        services: Vec::new(),
+        model: None,
+        netbios: None,
+        ssdp: None,
         first_seen: now,
         last_seen: now,
         online: true,
+        missed: 0,
         is_self: ip == iface.ip,
         is_gateway: Some(ip) == iface.gateway,
         flow: FlowCounters::default(),
@@ -63,15 +68,18 @@ fn discovery_loop(shared: Shared, cfg: Arc<Config>, probe_tx: Sender<Ipv4Addr>) 
             st.force_scan = false;
             st.iface.clone()
         };
-        let mut found = discovery::sweep(&iface);
+        let (mut found, method) = discovery::sweep(&iface);
         found.push((iface.ip, iface.mac));
 
         let mut to_probe = Vec::new();
         {
             let mut st = state::lock(&shared);
             let now = Instant::now();
+            st.discovery = method.label().to_string();
+            // Un equipo se da por apagado tras 2 barridos seguidos sin respuesta (evita parpadeos).
             for d in st.devices.values_mut() {
-                d.online = false;
+                d.missed = d.missed.saturating_add(1);
+                d.online = d.missed < 2;
             }
             for (ip, mac) in found {
                 let d = st.devices.entry(ip).or_insert_with(|| new_device(ip, mac, &iface));
@@ -81,10 +89,11 @@ fn discovery_loop(shared: Shared, cfg: Arc<Config>, probe_tx: Sender<Ipv4Addr>) 
                     d.scanned = None;
                 }
                 d.online = true;
+                d.missed = 0;
                 d.last_seen = now;
             }
             for d in st.devices.values() {
-                if d.online && d.scanned.is_none_or(|t| t.elapsed() > RESCAN_PORTS) {
+                if d.missed == 0 && d.scanned.is_none_or(|t| t.elapsed() > RESCAN_PORTS) {
                     to_probe.push(d.ip);
                 }
             }
@@ -120,13 +129,30 @@ fn probe_device(shared: &Shared, cfg: &Config, ip: Ipv4Addr) {
             None => return,
         }
     };
-    let hostname = if is_self { own_hostname() } else { probe::reverse_name(ip) };
+    // Escaneo de puertos y huellas (mDNS/NetBIOS/SSDP) a la vez: tardan ~1-2 s por equipo.
+    let (ports, fp) = std::thread::scope(|s| {
+        let ports = s.spawn(|| if cfg.portscan { probe::scan_ports(ip, Duration::from_millis(350), 16) } else { Vec::new() });
+        let fp = s.spawn(|| if cfg.fingerprint && !is_self { fingerprint::probe(ip) } else { Default::default() });
+        (ports.join().unwrap_or_default(), fp.join().unwrap_or_default())
+    });
+    let rdns = if is_self { own_hostname() } else { probe::reverse_name(ip) };
+    // Nombre: DNS inverso > mDNS > NetBIOS
+    let hostname = rdns.or(fp.hostname.clone()).or(fp.netbios.clone());
     let ttl = if raw && !is_self { probe::icmp_ttl(ip, Duration::from_millis(800)) } else { None };
-    let ports = if cfg.portscan { probe::scan_ports(ip, Duration::from_millis(350), 16) } else { Vec::new() };
     let os = if is_self {
         "Linux (esta máquina)".to_string()
     } else {
-        osdetect::guess(&osdetect::Signals { ttl, vendor: &vendor, ports: &ports, hostname: hostname.as_deref(), is_gateway: is_gw })
+        osdetect::guess(&osdetect::Signals {
+            ttl,
+            vendor: &vendor,
+            ports: &ports,
+            hostname: hostname.as_deref(),
+            is_gateway: is_gw,
+            services: &fp.services,
+            model: fp.model.as_deref(),
+            netbios: fp.netbios.as_deref(),
+            ssdp: fp.ssdp_server.as_deref(),
+        })
     };
     let mut st = state::lock(shared);
     if let Some(d) = st.devices.get_mut(&ip) {
@@ -134,6 +160,10 @@ fn probe_device(shared: &Shared, cfg: &Config, ip: Ipv4Addr) {
         d.ttl = ttl.or(d.ttl);
         d.ports = ports;
         d.os = os;
+        d.services = fp.services;
+        d.model = fp.model.or(d.model.take());
+        d.netbios = fp.netbios.map(|n| match &fp.workgroup { Some(g) => format!("{n} ({g})"), None => n });
+        d.ssdp = fp.ssdp_server;
         d.scanned = Some(Instant::now());
     }
 }

@@ -2,9 +2,8 @@
 //! (puerto 9, «discard») a cada IP para que el kernel resuelva su MAC por ARP y después se lee la
 //! tabla de vecinos de `/proc/net/arp`. No requiere root ni `CAP_NET_RAW`.
 //!
-//! Limitación conocida: el kernel puede conservar unos minutos la entrada de un equipo que ya se
-//! apagó. Un ARP «who-has» propio (con `CAP_NET_RAW`) daría presencia exacta; está previsto como
-//! otra implementación del mismo contrato (`sweep` → lista de (IP, MAC)).
+//! Limitación del método sin privilegios: el kernel puede conservar unos minutos la entrada de un equipo
+//! que ya se apagó. Con `CAP_NET_RAW` se usa en su lugar el ARP propio de `arp.rs`, que es exacto.
 
 use super::iface::IfaceInfo;
 use std::net::{Ipv4Addr, UdpSocket};
@@ -19,7 +18,30 @@ pub fn hosts(iface: &IfaceInfo) -> Vec<Ipv4Addr> {
     ((net + 1)..bcast).map(Ipv4Addr::from).filter(|ip| *ip != iface.ip).collect()
 }
 
-pub fn sweep(iface: &IfaceInfo) -> Vec<(Ipv4Addr, [u8; 6])> {
+/// Con `CAP_NET_RAW`: ARP propio (presencia exacta). Sin él: UDP + tabla del kernel.
+pub fn sweep(iface: &IfaceInfo) -> (Vec<(Ipv4Addr, [u8; 6])>, Method) {
+    if let Some(found) = super::arp::sweep(iface) {
+        return (found, Method::Arp);
+    }
+    (sweep_kernel(iface), Method::KernelTable)
+}
+
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub enum Method {
+    Arp,
+    KernelTable,
+}
+
+impl Method {
+    pub fn label(self) -> &'static str {
+        match self {
+            Method::Arp => "ARP propio (presencia exacta)",
+            Method::KernelTable => "tabla ARP del kernel (puede tardar en notar equipos apagados)",
+        }
+    }
+}
+
+fn sweep_kernel(iface: &IfaceInfo) -> Vec<(Ipv4Addr, [u8; 6])> {
     if let Ok(sock) = UdpSocket::bind((iface.ip, 0)) {
         for h in hosts(iface) {
             let _ = sock.send_to(&[0u8], (h, 9));

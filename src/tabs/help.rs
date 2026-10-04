@@ -131,7 +131,7 @@ impl Tab for Help {
                 (None, _) => Line::styled(" NetFlow ahora: desactivado (arranca con --netflow 2055)", Style::new().fg(Color::Yellow)),
                 (Some(p), _) if fl.flows == 0 => Line::styled(format!(" NetFlow ahora: escuchando en UDP {p}, todavía no llega nada del router"), Style::new().fg(Color::Yellow)),
                 (Some(p), _) => Line::styled(
-                    format!(" NetFlow ahora: ✔ recibiendo en UDP {p} — {} flujos, el último hace {}", fl.flows, fl.last.map(|t| util::ago(t.elapsed().as_secs())).unwrap_or_default()),
+                    format!(" NetFlow ahora: ✔ recibiendo {} en UDP {p} — {} flujos, el último hace {}", match fl.version { Some(5) => "v5", Some(9) => "v9", Some(10) => "IPFIX", _ => "" }, fl.flows, fl.last.map(|t| util::ago(t.elapsed().as_secs())).unwrap_or_default()),
                     Style::new().fg(Color::Green),
                 ),
             };

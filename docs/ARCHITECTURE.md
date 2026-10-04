@@ -32,9 +32,10 @@ regístrala en `net/mod.rs` y úsala desde un worker o una pestaña. Puntos de e
 
 | Quiero… | Dónde |
 |---|---|
-| Presencia exacta con ARP propio | otra implementación de `discovery::sweep` → `Vec<(Ipv4Addr, [u8;6])>` |
-| Mejor detección de SO (mDNS, NetBIOS, SSDP, huella TCP) | nuevas señales en `osdetect::Signals` + reglas en `guess` |
-| NetFlow v9 / IPFIX | un parser que produzca `netflow::Record` (como `parse_v5`) |
+| Descubrir de otra forma (p. ej. NDP para IPv6) | otra función junto a `discovery::sweep` → `Vec<(Ipv4Addr, [u8;6])>`; hoy: `arp.rs` (ARP propio, con CAP_NET_RAW) y la tabla ARP del kernel |
+| Otra sonda para identificar equipos (HTTP, SNMP, SSH banner…) | una función `fn(ip) -> …` y una línea en `fingerprint::probe`; añade el campo a `Signals` y reglas en `osdetect::guess` |
+| Mejor detección de SO | reglas en `osdetect::guess` (recibe todas las señales: TTL, fabricante, puertos, nombre, modelo, servicios mDNS, NetBIOS, SSDP) |
+| Otro formato de flujos (sFlow…) | un parser que produzca `netflow::Record`, como `parse_v5` / `parse_template_based` |
 | Otra fuente de tráfico por dispositivo (SSH al router, conntrack) | un hilo que rellene `Device.flow`, como `netflow::run` |
 | Otro proveedor de test de velocidad | que `speed::list()` devuelva más `Server` (ping, descarga, subida) |
 | Otro origen de contadores del router | rama nueva en `workers::gateway_loop` |

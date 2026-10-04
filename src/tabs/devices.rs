@@ -129,6 +129,7 @@ impl Tab for Devices {
                         format!("puerta de enlace {}", st.iface.gateway.map(|g| g.to_string()).unwrap_or("?".into())),
                         format!("{} dispositivos ({} en línea)", devs.len(), online),
                         scan,
+                        if st.discovery.starts_with("ARP propio") { "ARP propio".to_string() } else { "tabla ARP del kernel".to_string() },
                         icmp.to_string(),
                     ]
                     .into_iter()
@@ -149,7 +150,7 @@ impl Tab for Devices {
             },
         ]);
 
-        let detail_h = if self.detail { 8 } else { 0 };
+        let detail_h = if self.detail { 10 } else { 0 };
         let [info_a, table_a, detail_a] =
             Layout::vertical([Constraint::Length(2), Constraint::Min(3), Constraint::Length(detail_h)]).areas(area);
         f.render_widget(info, info_a);
@@ -223,6 +224,13 @@ impl Tab for Devices {
                     Line::from(format!("IP {} · MAC {} · {}", d.ip, util::mac_str(&d.mac), if d.vendor.is_empty() { "fabricante desconocido" } else { &d.vendor })),
                     Line::from(format!("Nombre: {} · Sistema: {} · TTL: {}", d.hostname.as_deref().unwrap_or("–"), if d.os.is_empty() { "desconocido" } else { &d.os }, d.ttl.map(|t| t.to_string()).unwrap_or("–".into()))),
                     Line::from(format!("Puertos abiertos: {ports}")),
+                    Line::from(format!(
+                        "Identificación: modelo {} · NetBIOS {} · UPnP {}",
+                        d.model.as_deref().unwrap_or("–"),
+                        d.netbios.as_deref().unwrap_or("–"),
+                        d.ssdp.as_deref().unwrap_or("–")
+                    )),
+                    Line::from(format!("Servicios mDNS: {}", if d.services.is_empty() { "–".to_string() } else { d.services.join(", ") })),
                     Line::from(format!(
                         "Tráfico desde el arranque (NetFlow): ↓ {} · ↑ {}",
                         util::bytes(d.flow.in_bytes),

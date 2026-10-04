@@ -27,9 +27,14 @@ pub struct Device {
     pub ports: Vec<u16>,
     pub scanned: Option<Instant>,
     pub os: String,
+    pub services: Vec<String>,     // servicios mDNS anunciados (_airplay._tcp…)
+    pub model: Option<String>,     // modelo declarado por mDNS (equipos Apple)
+    pub netbios: Option<String>,   // «NOMBRE (GRUPO)» por NetBIOS
+    pub ssdp: Option<String>,      // cabecera SERVER de UPnP
     pub first_seen: Instant,
     pub last_seen: Instant,
     pub online: bool,
+    pub missed: u8, // barridos seguidos sin respuesta (se da por apagado tras 2)
     pub is_self: bool,
     pub is_gateway: bool,
     pub flow: FlowCounters,
@@ -70,6 +75,7 @@ pub struct State {
     pub scanning: bool,
     pub last_sweep: Option<Instant>,
     pub force_scan: bool,
+    pub discovery: String, // método de descubrimiento en uso
     pub raw_icmp: bool, // ¿hay CAP_NET_RAW para medir el TTL?
     /// SNMP del router. Se puede cambiar en caliente desde la pestaña Puerta de enlace;
     /// `snmp_gen` sube con cada cambio para que el hilo de la puerta de enlace se reconecte.
@@ -88,6 +94,7 @@ pub fn new(iface: IfaceInfo, snmp: Option<SnmpCfg>) -> Shared {
         scanning: false,
         last_sweep: None,
         force_scan: false,
+        discovery: String::new(),
         raw_icmp: false,
         snmp,
         snmp_gen: 0,

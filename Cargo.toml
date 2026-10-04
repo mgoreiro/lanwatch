@@ -1,6 +1,6 @@
 [package]
 name = "lanwatch"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2021"
 description = "Monitor de red en terminal, de mínimo consumo, para Linux/ARM (Orange Pi)"
 license = "GPL-3.0-or-later"

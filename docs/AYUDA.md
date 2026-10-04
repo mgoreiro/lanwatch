@@ -20,9 +20,12 @@ Enter  detalle del equipo     s  ordenar por IP / descarga / subida
 r      volver a escanear      c  dar CAP_NET_RAW al programa (sudo setcap)
 ```
 
-- Se escanea sola cada 60 s. Los equipos apagados se atenúan; la lista puede tardar unos minutos en
-  notarlo porque se apoya en la tabla ARP del sistema.
-- **Sistema operativo:** es una estimación a partir de fabricante, puertos, nombre y, si hay permiso, el TTL.
+- Se escanea sola cada 60 s. Los equipos apagados se atenúan. Con `CAP_NET_RAW` se usa **ARP propio** (presencia
+  exacta; se da por apagado un equipo tras 2 barridos sin respuesta, para no parpadear); sin él, la tabla ARP del
+  sistema, que puede tardar unos minutos en notar que un equipo se apagó.
+- **Sistema operativo:** se identifica preguntando al propio equipo: **mDNS** (modelo, servicios como AirPlay o Chromecast,
+  nombre `.local`), **NetBIOS** (Windows/Samba) y **UPnP/SSDP**; y se completa con fabricante, puertos y, con permiso, el TTL.
+  `Enter` muestra lo que respondió cada equipo. Se desactiva con `--fingerprint off`.
 - **Fabricante vacío o «MAC privada»:** los móviles modernos usan MAC aleatoria por red Wi-Fi. No se puede deducir.
 - **↓ Entrante / ↑ Saliente** por equipo necesitan que el router envíe NetFlow (ver la página «NetFlow y SNMP»).
   Mientras no llegue nada se ve `n/d` o `–`.
@@ -74,6 +77,7 @@ instalación (ejecutable, fichero de configuración, permisos, SNMP, NetFlow…)
 
 ```
 --once                 escanea una vez, imprime la tabla y sale (para scripts)
+--fingerprint on|off   sondas mDNS/NetBIOS/SSDP para identificar equipos
 --snmp pública/eth0    contadores del router por SNMP
 --netflow 2055|off     puerto UDP del colector NetFlow
 --iface end0           interfaz a vigilar

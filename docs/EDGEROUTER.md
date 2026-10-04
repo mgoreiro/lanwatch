@@ -33,7 +33,8 @@ exit
 
 - `interface switch0`: la interfaz de la **LAN**. Pon solo una, o los flujos se contarán dos veces.
   Si tu LAN no es `switch0`, mira `show interfaces` en el router.
-- `version 5`: es la única que entiende lanwatch por ahora.
+- `version 5`: lanwatch entiende NetFlow **v5, v9 e IPFIX (versión 10)**; cualquiera vale. v9/IPFIX envían plantillas, así que la primera
+  cifra puede tardar uno o dos minutos en aparecer. Solo se cuenta el tráfico IPv4.
 - Los dos `timeout` hacen que el router envíe los datos cada pocos segundos en vez de esperar a que
   cada conexión termine (por defecto puede tardar mucho y las cifras llegarían a trompicones).
 

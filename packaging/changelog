@@ -1,3 +1,18 @@
+lanwatch (0.3.0) stable; urgency=medium
+
+  * El colector entiende NetFlow v5, v9 e IPFIX (plantillas por
+    exportador).
+  * Con CAP_NET_RAW, el descubrimiento usa ARP propio y la presencia
+    de los equipos es exacta; sin el permiso se mantiene la tabla ARP
+    del kernel. Un equipo se da por apagado tras 2 barridos sin
+    respuesta.
+  * Los dispositivos se identifican por mDNS, NetBIOS y SSDP/UPnP
+    (modelo, servicios, nombre y sistema). Opcion --fingerprint.
+  * Nueva pestana About con proyecto, creditos y estado de la
+    instalacion.
+
+ -- mgoreiro <mgoreiro@gmail.com>  Sun, 04 Oct 2026 23:00:00 +0000
+
 lanwatch (0.2.0) stable; urgency=medium
 
   * Pestaña de ayuda con la guía de la aplicación y cómo activar NetFlow/SNMP.

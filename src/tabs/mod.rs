@@ -90,7 +90,7 @@ mod tests {
                 let ip = Ipv4Addr::new(192, 168, 1, 1 + i as u8 * 100);
                 st.devices.insert(ip, Device {
                     ip, mac: [0xf0, 0x9f, 0xc2, 0, 0, i as u8], vendor: vendor.into(), hostname: Some(name.into()), ttl: Some(64), ports, scanned: Some(now),
-                    os: os.into(), first_seen: now, last_seen: now, online: true, is_self: false, is_gateway: i == 0,
+                    os: os.into(), services: Vec::new(), model: None, netbios: None, ssdp: None, first_seen: now, last_seen: now, online: true, missed: 0, is_self: false, is_gateway: i == 0,
                     flow: FlowCounters { in_bytes: 5_000_000, out_bytes: 900_000, in_bps: 120_000.0, out_bps: 8_000.0, seen: true },
                 });
             }

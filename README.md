@@ -10,7 +10,7 @@ En una Orange Pi Zero 3: **~3,6 MB de RAM** y **~1 % de un núcleo** de media co
 
 | # | Pestaña | Qué muestra |
 |---|---|---|
-| 1 | **Dispositivos** | Todos los equipos de la LAN: IP, MAC, **fabricante** (decodificado de la MAC con la base de la IEEE embebida), nombre, **sistema operativo** estimado, **puertos abiertos** y **tráfico entrante/saliente** por dispositivo. `Enter` abre el detalle. |
+| 1 | **Dispositivos** | Todos los equipos de la LAN: IP, MAC, **fabricante** (decodificado de la MAC con la base de la IEEE embebida), nombre, **sistema operativo** (identificado preguntando por mDNS, NetBIOS y UPnP, y estimado por puertos/TTL), **puertos abiertos** y **tráfico entrante/saliente** por dispositivo. `Enter` abre el detalle. |
 | 2 | **Puerta de enlace** | Tráfico total entrante/saliente del router (tasa, pico, total y gráfica), por SNMP; sin SNMP, el de la interfaz de esta máquina. |
 | 3 | **DNS** | Compara latencia y respuestas del DNS del sistema y de las IP que añadas (`i`). 12 dominios, primera consulta y repetición (caché). |
 | 4 | **Velocidad** | Latencia, jitter, descarga y subida contra servidores públicos (LibreSpeed + Cloudflare). Lista para elegir a mano o **modo automático** (`a`): el de menor latencia. |
@@ -53,9 +53,9 @@ Las opciones también pueden ir en `~/.config/lanwatch.conf` o `/etc/lanwatch.co
 
 | Función | Necesita |
 |---|---|
-| Dispositivos, fabricante, puertos | Nada: sin root. Barrido UDP + tabla ARP del kernel + escaneo TCP *connect*. |
+| Dispositivos, fabricante, puertos | Nada: sin root. Barrido UDP + tabla ARP del kernel + escaneo TCP *connect* + sondas mDNS/NetBIOS/SSDP. Con `CAP_NET_RAW`, **ARP propio** (presencia exacta). |
 | TTL → mejor detección de SO | `CAP_NET_RAW` en el binario: tecla **`c`** en la pestaña Dispositivos (pide confirmación, luego tu contraseña de `sudo`, y la app se reinicia sola) o `./lanwatch --setcap`. Si vuelves a copiar el binario hay que repetirlo. Sin él se estima por puertos, fabricante y nombre. |
-| Tráfico por dispositivo | Que el router exporte **NetFlow v5** a esta máquina. Ver [docs/EDGEROUTER.md](docs/EDGEROUTER.md). |
+| Tráfico por dispositivo | Que el router exporte **NetFlow (v5, v9 o IPFIX)** a esta máquina. Ver [docs/EDGEROUTER.md](docs/EDGEROUTER.md). |
 | Tráfico de la puerta de enlace | SNMP v2c activado en el router. Se configura desde la pestaña (tecla `s`) o con `--snmp`. |
 | DNS, velocidad | Salida a Internet. |
 
@@ -74,10 +74,10 @@ scp dist/lanwatch-aarch64 usuario@pi:~/lanwatch
 
 ## Límites conocidos
 
-- **Presencia de dispositivos:** se apoya en la tabla ARP del kernel, que puede conservar unos minutos un equipo ya apagado. Un ARP propio con `CAP_NET_RAW` daría presencia exacta (hueco previsto en `net/discovery.rs`).
+- **Presencia de dispositivos:** con `CAP_NET_RAW` es exacta (ARP propio). Sin él se apoya en la tabla ARP del kernel, que puede conservar unos minutos un equipo ya apagado. En ambos casos un equipo se da por apagado tras 2 barridos seguidos sin respuesta.
 - **Varias IP con la misma MAC** (proxy ARP, contenedores en macvlan) aparecen como dispositivos distintos con la misma MAC.
-- **SO:** es una estimación heurística, no una huella exacta. Las MAC aleatorias de móviles modernos no tienen fabricante.
-- **NetFlow** se exporta cuando el flujo caduca, así que las tasas son medias de 60 s, no instantáneas. v9/IPFIX no están implementados.
+- **SO:** es una identificación a partir de lo que el equipo cuenta (mDNS, NetBIOS, UPnP) y de heurísticas; no una huella exacta. Las MAC aleatorias de móviles modernos no tienen fabricante.
+- **NetFlow:** se exporta al caducar el flujo, así que las tasas son medias de 60 s, no instantáneas. Solo se cuenta IPv4.
 - **Tests de velocidad:** los servidores públicos limitan a quien los usa mucho (devuelven 403/429). Si pasa, la app lo indica y basta con elegir otro servidor o esperar.
 
 ## Estructura y ampliación

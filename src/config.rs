@@ -16,6 +16,7 @@ pub struct Config {
     pub netflow_port: Option<u16>, // None = desactivado
     pub snmp: Option<SnmpCfg>,
     pub portscan: bool,
+    pub fingerprint: bool, // sondas mDNS/NetBIOS/SSDP a cada dispositivo
     pub scan_secs: u64,
     pub setcap: bool, // da CAP_NET_RAW al binario (pide sudo) y sale
     pub once: bool,
@@ -24,7 +25,7 @@ pub struct Config {
 
 impl Default for Config {
     fn default() -> Self {
-        Config { iface: None, netflow_port: Some(2055), snmp: None, portscan: true, scan_secs: 60, setcap: false, once: false, source: None }
+        Config { iface: None, netflow_port: Some(2055), snmp: None, portscan: true, fingerprint: true, scan_secs: 60, setcap: false, once: false, source: None }
     }
 }
 
@@ -34,10 +35,11 @@ lanwatch — monitor de red en terminal
 USO: lanwatch [opciones]
 
   --iface <nombre>            interfaz a vigilar (por defecto, la de la ruta por defecto)
-  --netflow <puerto|off>      colector NetFlow v5 para el tráfico por dispositivo (2055)
+  --netflow <puerto|off>      colector NetFlow v5/v9/IPFIX para el tráfico por dispositivo (2055)
   --snmp <comunidad>[@host][/interfaz]
                               contadores del router por SNMP v2c (host = puerta de enlace)
   --portscan <on|off>         escaneo de puertos de los dispositivos (on)
+  --fingerprint <on|off>      sondas mDNS/NetBIOS/SSDP para identificar mejor los equipos (on)
   --scan-interval <segundos>  cada cuánto se barre la red (60)
   --setcap                    da CAP_NET_RAW al binario (sudo) para medir el TTL; también en la app (tecla c)
   --once                      sin interfaz: escanea una vez, imprime los dispositivos y sale
@@ -119,6 +121,7 @@ impl Config {
                 self.snmp = Some(SnmpCfg { host, community: community.to_string(), ifname });
             }
             "portscan" => self.portscan = matches!(val, "on" | "1" | "true" | "si" | "sí"),
+            "fingerprint" => self.fingerprint = matches!(val, "on" | "1" | "true" | "si" | "sí"),
             "scan-interval" => {
                 self.scan_secs = val.parse::<u64>().map_err(|_| "scan-interval: número inválido".to_string())?.max(10)
             }

@@ -51,6 +51,7 @@ pub fn run(shared: &Shared, cfg: &crate::config::Config) {
         util::rate(st.gateway.peak_out),
         st.gateway.error.as_ref().map(|e| format!(" · error: {e}")).unwrap_or_default()
     );
+    out!("Descubrimiento: {}", st.discovery);
     out!("CAP_NET_RAW (TTL): {}", if st.raw_icmp { "sí" } else { "no" });
     out!("{:<16} {:<17} {:<22} {:<18} {:<26} {}", "IP", "MAC", "FABRICANTE", "NOMBRE", "SISTEMA", "PUERTOS");
     for d in st.devices.values().filter(|d| d.online) {

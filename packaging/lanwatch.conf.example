@@ -5,7 +5,8 @@
 # puede escribirlo: los cambios hechos desde la interfaz (p. ej. el asistente de SNMP) no se podrían guardar.
 
 #iface=end0
-#netflow=2055          # puerto UDP del colector NetFlow v5, u «off»
+#netflow=2055          # puerto UDP del colector NetFlow (v5, v9, IPFIX), u «off»
 #snmp=public@192.168.1.1/eth0      # comunidad[@router][/interfaz]; mejor configurarlo desde la pestaña
 #portscan=on
+#fingerprint=on        # sondas mDNS/NetBIOS/SSDP para identificar equipos
 #scan-interval=60

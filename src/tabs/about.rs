@@ -97,6 +97,7 @@ impl Tab for About {
                 (Some(p), Some(v)) => format!("UDP {p}, recibiendo {}", match v { 5 => "NetFlow v5", 9 => "NetFlow v9", 10 => "IPFIX", _ => "?" }),
             },
         ));
+        l.push(row("Descubrimiento", if st.discovery.is_empty() { "iniciando…".to_string() } else { st.discovery.clone() }));
         l.push(row("Dispositivos", format!("{} ({} en línea)", st.devices.len(), st.devices.values().filter(|d| d.online).count())));
         l.push(row("En marcha desde", format!("hace {}", util::ago(self.started.elapsed().as_secs()))));
         l.push(Line::raw(""));

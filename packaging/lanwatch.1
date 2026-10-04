@@ -1,4 +1,4 @@
-.TH LANWATCH 1 "octubre 2026" "lanwatch 0.2.0" "Órdenes de usuario"
+.TH LANWATCH 1 "octubre 2026" "lanwatch 0.3.0" "Órdenes de usuario"
 .SH NOMBRE
 lanwatch \- monitor de red en terminal de consumo mínimo
 .SH SINOPSIS
@@ -14,13 +14,16 @@ y un test de velocidad. La pestaña de ayuda explica cada función y cómo activ
 Interfaz a vigilar (por defecto, la de la ruta por defecto).
 .TP
 .BI \-\-netflow " puerto|off"
-Puerto UDP del colector NetFlow v5 (2055 por defecto).
+Puerto UDP del colector NetFlow v5, v9 o IPFIX (2055 por defecto).
 .TP
 .BI \-\-snmp " comunidad[@router][/interfaz]"
 Lee los contadores de la puerta de enlace por SNMP v2c.
 .TP
 .BI \-\-portscan " on|off"
 Activa o desactiva el escaneo de puertos.
+.TP
+.BI \-\-fingerprint " on|off"
+Sondas mDNS, NetBIOS y SSDP a cada dispositivo para identificarlo mejor (on).
 .TP
 .BI \-\-scan\-interval " segundos"
 Intervalo entre barridos de la red (60).
@@ -40,6 +43,6 @@ Ayuda y versión.
 .I /etc/lanwatch.conf
 Opciones, una por línea (clave=valor). Se usa el primero que exista. El asistente de SNMP guarda aquí.
 .SH TECLAS
-Tab / Mayús+Tab o 1\-5 cambian de pestaña; q sale. Cada pestaña indica las suyas en el pie.
+Tab / Mayús+Tab o 1\-6 cambian de pestaña; q sale. Cada pestaña indica las suyas en el pie.
 .SH VÉASE TAMBIÉN
 /usr/share/doc/lanwatch/
