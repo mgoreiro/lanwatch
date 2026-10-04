@@ -3,7 +3,15 @@
 
 use crate::core::state::{self, Shared};
 use crate::util;
+use std::io::Write;
 use std::time::{Duration, Instant};
+
+/// `println!` entra en pánico si la salida se cierra (p. ej. `| head`); aquí se ignora.
+macro_rules! out {
+    ($($a:tt)*) => {{
+        let _ = writeln!(std::io::stdout(), $($a)*);
+    }};
+}
 
 pub fn run(shared: &Shared) {
     let start = Instant::now();
@@ -17,11 +25,11 @@ pub fn run(shared: &Shared) {
         }
     }
     let st = state::lock(shared);
-    println!("{} · {}/{} · puerta de enlace {}", st.iface.name, st.iface.ip, st.iface.prefix, st.iface.gateway.map(|g| g.to_string()).unwrap_or("?".into()));
-    println!("CAP_NET_RAW (TTL): {}", if st.raw_icmp { "sí" } else { "no" });
-    println!("{:<16} {:<17} {:<22} {:<18} {:<26} {}", "IP", "MAC", "FABRICANTE", "NOMBRE", "SISTEMA", "PUERTOS");
+    out!("{} · {}/{} · puerta de enlace {}", st.iface.name, st.iface.ip, st.iface.prefix, st.iface.gateway.map(|g| g.to_string()).unwrap_or("?".into()));
+    out!("CAP_NET_RAW (TTL): {}", if st.raw_icmp { "sí" } else { "no" });
+    out!("{:<16} {:<17} {:<22} {:<18} {:<26} {}", "IP", "MAC", "FABRICANTE", "NOMBRE", "SISTEMA", "PUERTOS");
     for d in st.devices.values().filter(|d| d.online) {
-        println!(
+        out!(
             "{:<16} {:<17} {:<22} {:<18} {:<26} {}",
             d.ip,
             util::mac_str(&d.mac),
