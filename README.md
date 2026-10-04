@@ -38,7 +38,7 @@ Las opciones también pueden ir en `~/.config/lanwatch.conf` o `/etc/lanwatch.co
 | Dispositivos, fabricante, puertos | Nada: sin root. Barrido UDP + tabla ARP del kernel + escaneo TCP *connect*. |
 | TTL → mejor detección de SO | `CAP_NET_RAW` en el binario: tecla **`c`** en la pestaña Dispositivos (pide confirmación, luego tu contraseña de `sudo`, y la app se reinicia sola) o `./lanwatch --setcap`. Si vuelves a copiar el binario hay que repetirlo. Sin él se estima por puertos, fabricante y nombre. |
 | Tráfico por dispositivo | Que el router exporte **NetFlow v5** a esta máquina. Ver [docs/EDGEROUTER.md](docs/EDGEROUTER.md). |
-| Tráfico de la puerta de enlace | SNMP v2c activado en el router (`--snmp`). |
+| Tráfico de la puerta de enlace | SNMP v2c activado en el router. Se configura desde la pestaña (tecla `s`) o con `--snmp`. |
 | DNS, velocidad | Salida a Internet. |
 
 Sin la configuración del router, el resto funciona y las columnas de tráfico por equipo muestran `n/d`.

@@ -7,7 +7,7 @@ use crate::core::state;
 use crate::util;
 use ratatui::crossterm::event::{KeyCode, KeyEvent};
 use ratatui::layout::{Constraint, Layout, Rect};
-use ratatui::style::{Color, Modifier, Style, Stylize};
+use ratatui::style::{Color, Modifier, Style};
 use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, Paragraph};
 use ratatui::Frame;
@@ -135,13 +135,13 @@ impl Tab for Help {
                     Style::new().fg(Color::Green),
                 ),
             };
-            let sn = if ctx.cfg.snmp.is_some() {
+            let sn = if st.snmp.is_some() {
                 match &st.gateway.error {
                     Some(e) => Line::styled(format!(" SNMP ahora: {e}"), Style::new().fg(Color::Red)),
                     None => Line::styled(format!(" SNMP ahora: ✔ {}", st.gateway.source), Style::new().fg(Color::Green)),
                 }
             } else {
-                Line::styled(" SNMP ahora: sin configurar (opción --snmp)", Style::new().fg(Color::Yellow))
+                Line::styled(" SNMP ahora: sin configurar — pulsa s en la pestaña Puerta de enlace", Style::new().fg(Color::Yellow))
             };
             vec![nf, sn]
         } else {

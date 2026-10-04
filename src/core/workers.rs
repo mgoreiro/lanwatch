@@ -32,7 +32,7 @@ pub fn start(shared: Shared, cfg: Arc<Config>) {
         let shared = shared.clone();
         std::thread::spawn(move || netflow::run(port, shared));
     }
-    std::thread::spawn(move || gateway_loop(shared, cfg));
+    std::thread::spawn(move || gateway_loop(shared));
 }
 
 fn new_device(ip: Ipv4Addr, mac: [u8; 6], iface: &IfaceInfo) -> Device {
@@ -159,8 +159,7 @@ struct SnmpSrc {
     label: String,
 }
 
-fn connect_snmp(cfg: &Config, gateway: Option<Ipv4Addr>) -> Result<SnmpSrc, String> {
-    let s = cfg.snmp.as_ref().ok_or("sin SNMP")?;
+fn connect_snmp(s: &crate::config::SnmpCfg, gateway: Option<Ipv4Addr>) -> Result<SnmpSrc, String> {
     let host = s.host.or(gateway).ok_or("no hay IP del router para SNMP")?;
     let mut client = snmp::Client::new(host, &s.community)?;
     let (index, name) = client.find_ifindex(s.ifname.as_deref())?;
@@ -168,16 +167,29 @@ fn connect_snmp(cfg: &Config, gateway: Option<Ipv4Addr>) -> Result<SnmpSrc, Stri
     Ok(SnmpSrc { client, index, label: format!("SNMP {host} · {name}") })
 }
 
-fn gateway_loop(shared: Shared, cfg: Arc<Config>) {
+fn gateway_loop(shared: Shared) {
     let iface = state::lock(&shared).iface.clone();
     let mut src: Option<SnmpSrc> = None;
     let mut last_try = Instant::now() - Duration::from_secs(3600);
     let mut prev: Option<(u64, u64, Instant)> = None;
     let mut prev_source = String::new();
+    let mut seen_gen = u64::MAX;
     loop {
-        if cfg.snmp.is_some() && src.is_none() && last_try.elapsed() > Duration::from_secs(30) {
+        let (snmp_cfg, generation) = {
+            let st = state::lock(&shared);
+            (st.snmp.clone(), st.snmp_gen)
+        };
+        if generation != seen_gen {
+            // la configuración SNMP cambió (desde la pestaña): reconectar ya
+            seen_gen = generation;
+            src = None;
+            prev = None;
+            last_try = Instant::now() - Duration::from_secs(3600);
+            state::lock(&shared).gateway.error = None;
+        }
+        if let Some(sc) = snmp_cfg.as_ref().filter(|_| src.is_none() && last_try.elapsed() > Duration::from_secs(30)) {
             last_try = Instant::now();
-            match connect_snmp(&cfg, iface.gateway) {
+            match connect_snmp(sc, iface.gateway) {
                 Ok(s) => src = Some(s),
                 Err(e) => state::lock(&shared).gateway.error = Some(e),
             }
@@ -193,7 +205,7 @@ fn gateway_loop(shared: Shared, cfg: Arc<Config>) {
             },
             None => (
                 format!("Local · {}", iface.name),
-                if cfg.snmp.is_some() { "SNMP no disponible: se muestran los contadores de esta máquina.".into() } else { "Solo tráfico de esta máquina. Activa --snmp para ver el del router.".into() },
+                if snmp_cfg.is_some() { "SNMP no disponible: se muestran los contadores de esta máquina.".into() } else { "Solo tráfico de esta máquina. Pulsa s para configurar SNMP y ver el del router.".into() },
                 local_counters(&iface.name),
             ),
         };

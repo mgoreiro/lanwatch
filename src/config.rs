@@ -121,6 +121,49 @@ impl Config {
     }
 }
 
+impl SnmpCfg {
+    /// Forma `comunidad@host/interfaz`, la misma que acepta `--snmp` y el fichero de configuración.
+    pub fn to_value(&self) -> String {
+        let mut v = self.community.clone();
+        if let Some(h) = self.host {
+            v.push_str(&format!("@{h}"));
+        }
+        if let Some(i) = &self.ifname {
+            v.push_str(&format!("/{i}"));
+        }
+        v
+    }
+}
+
+/// Fichero donde se guardan los cambios hechos desde la interfaz: el primero que exista o, si no
+/// hay ninguno, `~/.config/lanwatch.conf`.
+pub fn save_path() -> Option<String> {
+    if let Ok(p) = std::env::var("LANWATCH_CONF") {
+        return Some(p); // el usuario (o una prueba) eligió el fichero explícitamente
+    }
+    let paths = conf_paths();
+    paths.iter().find(|p| std::path::Path::new(p.as_str()).exists()).cloned().or_else(|| {
+        std::env::var("HOME").ok().map(|h| format!("{h}/.config/lanwatch.conf"))
+    })
+}
+
+/// Pone (o quita, con `None`) la línea `snmp=` del fichero conservando el resto.
+pub fn save_snmp_to(path: &str, snmp: Option<&SnmpCfg>) -> Result<(), String> {
+    let old = std::fs::read_to_string(path).unwrap_or_default();
+    let mut lines: Vec<String> = old.lines().filter(|l| l.split_once('=').is_none_or(|(k, _)| k.trim() != "snmp")).map(String::from).collect();
+    if let Some(s) = snmp {
+        lines.push(format!("snmp={}", s.to_value()));
+    }
+    if let Some(dir) = std::path::Path::new(path).parent() {
+        std::fs::create_dir_all(dir).map_err(|e| format!("{}: {e}", dir.display()))?;
+    }
+    let mut text = lines.join("\n");
+    if !text.is_empty() {
+        text.push('\n');
+    }
+    std::fs::write(path, text).map_err(|e| format!("{path}: {e}"))
+}
+
 fn conf_paths() -> Vec<String> {
     let mut v = Vec::new();
     if let Ok(p) = std::env::var("LANWATCH_CONF") {
@@ -131,4 +174,29 @@ fn conf_paths() -> Vec<String> {
     }
     v.push("/etc/lanwatch.conf".into());
     v
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn guarda_y_quita_snmp_conservando_el_resto() {
+        let path = std::env::temp_dir().join(format!("lanwatch-test-{}.conf", std::process::id()));
+        let path = path.to_str().unwrap();
+        std::fs::write(path, "# mi config\nnetflow=2055\nsnmp=vieja\n").unwrap();
+        let cfg = SnmpCfg { host: Some("192.168.1.1".parse().unwrap()), community: "public".into(), ifname: Some("eth0".into()) };
+        save_snmp_to(path, Some(&cfg)).unwrap();
+        assert_eq!(std::fs::read_to_string(path).unwrap(), "# mi config\nnetflow=2055\nsnmp=public@192.168.1.1/eth0\n");
+        save_snmp_to(path, None).unwrap();
+        assert_eq!(std::fs::read_to_string(path).unwrap(), "# mi config\nnetflow=2055\n");
+        let _ = std::fs::remove_file(path);
+    }
+
+    #[test]
+    fn el_valor_se_puede_volver_a_leer() {
+        let mut c = Config::default();
+        c.apply("snmp", "public@10.0.0.1/eth0").unwrap();
+        assert_eq!(c.snmp.unwrap().to_value(), "public@10.0.0.1/eth0");
+    }
 }

@@ -80,7 +80,7 @@ mod tests {
 
     fn ctx() -> Ctx {
         let iface = IfaceInfo { name: "end0".into(), ip: Ipv4Addr::new(192, 168, 1, 232), prefix: 24, gateway: Some(Ipv4Addr::new(192, 168, 1, 1)), mac: [2, 0, 0xab, 1, 2, 3] };
-        let shared = state::new(iface);
+        let shared = state::new(iface, None);
         {
             let mut st = state::lock(&shared);
             let now = Instant::now();

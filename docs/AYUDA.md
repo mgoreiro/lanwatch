@@ -34,7 +34,8 @@ r      volver a escanear      c  dar CAP_NET_RAW al programa (sudo setcap)
 Tráfico total que entra y sale por el router: tasa actual, pico, total acumulado desde que arrancaste
 y una gráfica de los últimos minutos. Se actualiza cada 2 s.
 
-- Con **SNMP** (opción `--snmp`) lee los contadores del propio router. Sin él, muestra los de esta máquina.
+- Con **SNMP** lee los contadores del propio router. Sin él, muestra los de esta máquina. Se configura aquí mismo:
+  `s` abre un asistente (comunidad e IP del router → elegir la interfaz WAN), se aplica al instante y se guarda; `d` lo desactiva.
 - Los totales cuentan desde el arranque de lanwatch, no desde el del router.
 
 # 3 · DNS

@@ -124,8 +124,12 @@ pub struct Client {
 
 impl Client {
     pub fn new(host: Ipv4Addr, community: &str) -> Result<Client, String> {
+        Self::with_port(host, 161, community)
+    }
+
+    pub fn with_port(host: Ipv4Addr, port: u16, community: &str) -> Result<Client, String> {
         let sock = UdpSocket::bind("0.0.0.0:0").map_err(|e| e.to_string())?;
-        sock.connect((host, 161)).map_err(|e| e.to_string())?;
+        sock.connect((host, port)).map_err(|e| e.to_string())?;
         sock.set_read_timeout(Some(Duration::from_secs(2))).ok();
         Ok(Client { sock, community: community.to_string(), id: 1 })
     }
@@ -140,6 +144,25 @@ impl Client {
 
     pub fn get(&mut self, oid: &[u32]) -> Result<Value, String> {
         self.exchange(0xa0, oid).map(|r| r.1)
+    }
+
+    /// Todas las interfaces del equipo: (índice, nombre), recorriendo ifName con GETNEXT.
+    pub fn list_interfaces(&mut self) -> Result<Vec<(u32, String)>, String> {
+        let mut cur = IF_NAME.to_vec();
+        let mut out = Vec::new();
+        for _ in 0..128 {
+            let (oid, val) = self.exchange(0xa1, &cur)?;
+            if !oid.starts_with(IF_NAME) || oid.len() != IF_NAME.len() + 1 {
+                break;
+            }
+            let Value::Text(n) = val else { break };
+            out.push((*oid.last().unwrap(), n));
+            cur = oid;
+        }
+        if out.is_empty() {
+            return Err("el router respondió, pero no lista interfaces (¿comunidad sin permisos de lectura?)".into());
+        }
+        Ok(out)
     }
 
     /// Índice de la interfaz con ese nombre (recorre ifName con GETNEXT).
@@ -203,5 +226,71 @@ mod tests {
         let (oid, v) = parse_response(&msg).unwrap();
         assert_eq!(oid.last(), Some(&3));
         assert_eq!(v, Value::Int(0x0102));
+    }
+
+    /// Agente SNMP de juguete en 127.0.0.1: ifName {1: lo, 2: eth0, 3: eth1} y contadores fijos.
+    fn mock_agent(community: &'static str) -> u16 {
+        let sock = UdpSocket::bind("127.0.0.1:0").unwrap();
+        let port = sock.local_addr().unwrap().port();
+        std::thread::spawn(move || {
+            let names = ["lo", "eth0", "eth1"];
+            let mut buf = [0u8; 1500];
+            while let Ok((n, from)) = sock.recv_from(&mut buf) {
+                // petición: SEQ{ INT ver, OCTET community, PDU{ INT id, INT, INT, SEQ{ SEQ{ OID, NULL }}}}
+                let (_, msg, _) = read_tlv(&buf[..n], 0).unwrap();
+                let (_, _, p) = read_tlv(msg, 0).unwrap();
+                let (_, comm, p) = read_tlv(msg, p).unwrap();
+                if comm != community.as_bytes() {
+                    continue; // comunidad incorrecta: un agente real no responde
+                }
+                let (tag, pdu, _) = read_tlv(msg, p).unwrap();
+                let (_, id, p) = read_tlv(pdu, 0).unwrap();
+                let (_, _, p) = read_tlv(pdu, p).unwrap();
+                let (_, _, p) = read_tlv(pdu, p).unwrap();
+                let (_, vbl, _) = read_tlv(pdu, p).unwrap();
+                let (_, vb, _) = read_tlv(vbl, 0).unwrap();
+                let (_, oid, _) = read_tlv(vb, 0).unwrap();
+                let oid = dec_oid(oid);
+                let (rep_oid, val): (Vec<u32>, Vec<u8>) = if tag == 0xa1 {
+                    // GETNEXT sobre ifName
+                    let idx = if oid.as_slice() == IF_NAME { 1 } else { oid.last().copied().unwrap_or(0) + 1 } as usize;
+                    if oid.starts_with(IF_NAME) && idx <= names.len() {
+                        let mut o = IF_NAME.to_vec();
+                        o.push(idx as u32);
+                        (o, tlv(0x04, names[idx - 1].as_bytes()))
+                    } else {
+                        (vec![1, 3, 6, 1, 2, 1, 31, 1, 1, 1, 2, 1], tlv(0x04, b"fin"))
+                    }
+                } else if oid.starts_with(IF_HC_IN) {
+                    (oid.clone(), tlv(0x46, &[0x01, 0x00]))
+                } else {
+                    (oid.clone(), tlv(0x46, &[0x02, 0x00]))
+                };
+                let varbind = tlv(0x30, &[enc_oid(&rep_oid), val].concat());
+                let resp_pdu = tlv(0xa2, &[tlv(0x02, id), enc_int(0), enc_int(0), tlv(0x30, &varbind)].concat());
+                let resp = tlv(0x30, &[enc_int(1), tlv(0x04, community.as_bytes()), resp_pdu].concat());
+                let _ = sock.send_to(&resp, from);
+            }
+        });
+        port
+    }
+
+    #[test]
+    fn lista_interfaces_y_lee_contadores_contra_un_agente() {
+        let port = mock_agent("public");
+        let mut c = Client::with_port(Ipv4Addr::LOCALHOST, port, "public").unwrap();
+        assert_eq!(c.list_interfaces().unwrap(), vec![(1, "lo".into()), (2, "eth0".into()), (3, "eth1".into())]);
+        assert_eq!(c.find_ifindex(Some("eth1")).unwrap(), (3, "eth1".into()));
+        assert_eq!(c.find_ifindex(None).unwrap(), (2, "eth0".into())); // la primera que no es «lo»
+        assert!(c.find_ifindex(Some("nope")).is_err());
+        assert_eq!(c.counters(2).unwrap(), (256, 512));
+    }
+
+    #[test]
+    fn comunidad_incorrecta_no_responde() {
+        let port = mock_agent("secreta");
+        let mut c = Client::with_port(Ipv4Addr::LOCALHOST, port, "public").unwrap();
+        c.sock.set_read_timeout(Some(Duration::from_millis(300))).unwrap();
+        assert!(c.list_interfaces().is_err());
     }
 }

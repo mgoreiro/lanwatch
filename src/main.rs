@@ -39,7 +39,7 @@ fn main() {
             std::process::exit(1);
         }
     };
-    let shared = core::state::new(iface);
+    let shared = core::state::new(iface, cfg.snmp.clone());
     core::workers::start(shared.clone(), cfg.clone());
     if cfg.once {
         once::run(&shared);

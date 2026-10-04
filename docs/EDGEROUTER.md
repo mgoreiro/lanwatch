@@ -65,14 +65,11 @@ save
 exit
 ```
 
-Y arranca lanwatch con la interfaz WAN del router (normalmente `eth0`):
+Después, en lanwatch, ve a la pestaña **Puerta de enlace** y pulsa `s`: te pide la comunidad (`public`) y la
+IP del router, lo consulta, te muestra sus interfaces para que elijas la WAN (normalmente `eth0`) y lo activa
+al momento. Se guarda en `~/.config/lanwatch.conf`, así que no hay que repetirlo. Con `d` se desactiva.
 
-```
-lanwatch --snmp public/eth0
-```
-
-Para no escribirlo cada vez, añade la línea `snmp=public/eth0` a `~/.config/lanwatch.conf`.
-Si omites `/eth0`, usa la primera interfaz que no sea `lo`.
+Si prefieres la línea de órdenes: `lanwatch --snmp public/eth0`, o la línea `snmp=public/eth0` en el fichero.
 
 # Aviso · offload por hardware
 

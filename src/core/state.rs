@@ -1,6 +1,7 @@
 //! Estado compartido entre los hilos de trabajo (escriben) y las pestañas (leen).
 //! Un único `Mutex`: los accesos son breves y no hay contención real.
 
+use crate::config::SnmpCfg;
 use crate::net::iface::IfaceInfo;
 use std::collections::{BTreeMap, VecDeque};
 use std::net::Ipv4Addr;
@@ -68,11 +69,15 @@ pub struct State {
     pub last_sweep: Option<Instant>,
     pub force_scan: bool,
     pub raw_icmp: bool, // ¿hay CAP_NET_RAW para medir el TTL?
+    /// SNMP del router. Se puede cambiar en caliente desde la pestaña Puerta de enlace;
+    /// `snmp_gen` sube con cada cambio para que el hilo de la puerta de enlace se reconecte.
+    pub snmp: Option<SnmpCfg>,
+    pub snmp_gen: u64,
 }
 
 pub type Shared = Arc<Mutex<State>>;
 
-pub fn new(iface: IfaceInfo) -> Shared {
+pub fn new(iface: IfaceInfo, snmp: Option<SnmpCfg>) -> Shared {
     Arc::new(Mutex::new(State {
         iface,
         devices: BTreeMap::new(),
@@ -82,6 +87,8 @@ pub fn new(iface: IfaceInfo) -> Shared {
         last_sweep: None,
         force_scan: false,
         raw_icmp: false,
+        snmp,
+        snmp_gen: 0,
     }))
 }
 
