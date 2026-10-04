@@ -39,6 +39,12 @@ regístrala en `net/mod.rs` y úsala desde un worker o una pestaña. Puntos de e
 | Otro proveedor de test de velocidad | que `speed::list()` devuelva más `Server` (ping, descarga, subida) |
 | Otro origen de contadores del router | rama nueva en `workers::gateway_loop` |
 
+## Ayuda en la app
+
+`tabs/help.rs` muestra `docs/AYUDA.md` y `docs/EDGEROUTER.md` (embebidos con `include_str!`). Para cambiar la ayuda,
+edita esos ficheros; admiten `# títulos`, bloques de código y `> avisos`. En la página del router, la IP de
+ejemplo (192.168.1.232) se sustituye por la de la máquina.
+
 ## Opciones
 
 Se añaden en `Config::apply` (`config.rs`); sirven igual por argumento y por fichero.

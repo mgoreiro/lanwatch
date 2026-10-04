@@ -15,7 +15,9 @@ En una Orange Pi Zero 3: **~3,6 MB de RAM** y **~1 % de un núcleo** de media co
 | 3 | **DNS** | Compara latencia y respuestas del DNS del sistema y de las IP que añadas (`i`). 12 dominios, primera consulta y repetición (caché). |
 | 4 | **Velocidad** | Latencia, jitter, descarga y subida contra servidores públicos (LibreSpeed + Cloudflare). Lista para elegir a mano o **modo automático** (`a`): el de menor latencia. |
 
-Teclas globales: `Tab` / `Shift+Tab` / `1`‑`4` cambian de pestaña, `q` sale. Cada pestaña muestra las suyas abajo.
+| 5 | **Ayuda** | Guía de la aplicación y, paso a paso, cómo activar **NetFlow** y SNMP en el router (con la IP real de esta máquina y el estado actual). El texto sale de `docs/AYUDA.md` y `docs/EDGEROUTER.md`. |
+
+Teclas globales: `Tab` / `Shift+Tab` / `1`‑`5` cambian de pestaña, `q` sale. Cada pestaña muestra las suyas abajo.
 
 ## Uso
 

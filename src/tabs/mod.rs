@@ -11,6 +11,7 @@ use std::sync::{Arc, Mutex};
 pub mod devices;
 pub mod dns;
 pub mod gateway;
+pub mod help;
 pub mod speed;
 
 /// Acciones que una pestaña no puede hacer por sí sola porque afectan a la terminal o al proceso.
@@ -64,6 +65,7 @@ pub fn all() -> Vec<Box<dyn Tab>> {
         Box::new(gateway::Gateway::new()),
         Box::new(dns::DnsTab::new()),
         Box::new(speed::SpeedTab::new()),
+        Box::new(help::Help::new()),
     ]
 }
 
@@ -139,5 +141,19 @@ mod tests {
         let mut t = devices::Devices::new();
         t.on_key(key('c'), &ctx);
         assert!(!t.capturing_input());
+    }
+
+    /// La página de NetFlow de la ayuda sustituye la IP de ejemplo por la de esta máquina.
+    #[test]
+    fn la_ayuda_usa_la_ip_real() {
+        let ctx = ctx(); // la máquina del contexto es 192.168.1.232; la cambiamos para notar la sustitución
+        state::lock(&ctx.shared).iface.ip = Ipv4Addr::new(10, 9, 8, 7);
+        let mut t = help::Help::new();
+        t.on_key(key('l'), &ctx);
+        let mut term = Terminal::new(TestBackend::new(110, 60)).unwrap();
+        term.draw(|f| t.draw(f, f.area(), &ctx)).unwrap();
+        let text: String = term.backend().buffer().content().iter().map(|c| c.symbol()).collect();
+        assert!(text.contains("netflow server 10.9.8.7 port 2055"), "{text}");
+        assert!(!text.contains("netflow server 192.168.1.232"));
     }
 }
