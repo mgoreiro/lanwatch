@@ -13,7 +13,9 @@ pub mod devices;
 pub mod dns;
 pub mod gateway;
 pub mod help;
+pub mod iperf;
 pub mod speed;
+pub mod wifi;
 
 /// Acciones que una pestaña no puede hacer por sí sola porque afectan a la terminal o al proceso.
 /// La pestaña las pide con `Ctx::request` y `app.rs` las ejecuta.
@@ -66,6 +68,8 @@ pub fn all() -> Vec<Box<dyn Tab>> {
         Box::new(gateway::Gateway::new()),
         Box::new(dns::DnsTab::new()),
         Box::new(speed::SpeedTab::new()),
+        Box::new(iperf::IperfTab::new()),
+        Box::new(wifi::WifiTab::new()),
         Box::new(help::Help::new()),
         Box::new(about::About::new()),
     ]

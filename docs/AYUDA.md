@@ -6,7 +6,7 @@ del DNS y la velocidad de la conexión. Consume muy poco (unos 4 MB de RAM).
 # Teclas
 
 ```
-Tab / Mayús+Tab   cambiar de pestaña        1-6   ir directo a una pestaña
+Tab / Mayús+Tab   cambiar de pestaña        1-8   ir directo a una pestaña
 q  salir          Ctrl+C  salir             ↑ ↓   mover / desplazar
 ```
 
@@ -68,7 +68,38 @@ Enter  probar el servidor elegido de la lista       Esc  cancelar        r  reca
 - Los servidores públicos limitan a quien los usa mucho. Si responde «rechazada» o «403», elige otro o espera.
 - La subida depende mucho del servidor elegido; compara varios antes de sacar conclusiones.
 
-# 5 · Ayuda y 6 · About
+# 5 · iPerf3
+
+Mide el rendimiento TCP contra un servidor público de iperf3, o convierte este equipo en servidor.
+
+```
+Enter  probar el servidor elegido de la lista   r  lanzar con los datos del recuadro   Esc  parar
+m      modo servidor / cliente (por defecto, servidor)     p  puerto (por defecto, 5201)
+d      destino (IP o nombre) en modo cliente               v  subida ↑ / descarga ↓
+```
+
+- Necesita el programa `iperf3` (`sudo apt install iperf3`).
+- **Servidor:** escucha en el puerto indicado; desde otro equipo, `iperf3 -c <IP de esta máquina>`.
+- **Cliente:** 10 s contra el destino. Con `v` el servidor envía y se mide la descarga.
+- Los servidores públicos son de voluntarios: si no responden, la prueba se abandona a los 5 s con un aviso.
+- Si el servidor está **ocupado** con otra prueba, o el puerto ya está en uso en este equipo, lo indica y pregunta
+  «¿Esperar 1 minuto y reintentar? (s/n)». Con `s` hay cuenta atrás y se relanza solo; `Esc` cancela.
+
+# 6 · WiFi
+
+Redes visibles con su calidad de señal y, arriba, los datos de la red a la que estás conectado.
+
+- Calidad: **excelente** ≥ −55 dBm · **buena** ≥ −65 · **regular** ≥ −75 · **débil** ≥ −85 · **muy débil**.
+- `Enter` sobre una red abre su **detalle**: BSSID, fabricante del punto de acceso, tipo (infraestructura/malla),
+  banda, canal y frecuencia, ancho de canal, velocidad máxima anunciada, señal, seguridad y cifrado, cuántos
+  puntos de acceso comparten el nombre y la congestión (redes en el mismo canal y en canales que se solapan).
+  `Enter` o `Esc` lo cierra; `↑↓` pasa a otra red. El ancho, la velocidad y los cifrados solo salen con `nmcli`.
+- Se repite el barrido cada 15 s mientras la pestaña está a la vista; `r` lo fuerza. Un barrido interrumpe
+  unos instantes el tráfico del adaptador.
+- Usa `nmcli` (NetworkManager) o `iw`. Con `iw` sin ser root solo se ve la caché del kernel.
+- Sin tarjeta inalámbrica muestra «WiFi no disponible».
+
+# 7 · Ayuda y 8 · About
 
 La ayuda es esta guía. **About** muestra los datos del proyecto y del autor y, sobre todo, el estado de esta
 instalación (ejecutable, fichero de configuración, permisos, SNMP, NetFlow…): cópialo si necesitas pedir ayuda.

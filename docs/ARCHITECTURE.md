@@ -9,7 +9,7 @@ src/tabs/   Interfaz: una pestaña por fichero, todas detrás del trait `Tab`.
 src/app.rs  Bucle de eventos y dibujo. src/config.rs: opciones. src/once.rs: modo sin interfaz.
 ```
 
-Flujo: los hilos de `workers.rs` (o las propias pestañas, en DNS y velocidad, que son bajo demanda)
+Flujo: los hilos de `workers.rs` (o las propias pestañas, en DNS, velocidad, iPerf3 y WiFi, que son bajo demanda)
 llaman a `net/*`, escriben en `State` (un `Mutex`) y las pestañas lo leen al dibujar. En reposo todo
 duerme: la interfaz solo se redibuja con una tecla o con su reloj (1 s, o 200 ms si la pestaña dice
 que está `busy()`).
@@ -38,6 +38,8 @@ regístrala en `net/mod.rs` y úsala desde un worker o una pestaña. Puntos de e
 | Otro formato de flujos (sFlow…) | un parser que produzca `netflow::Record`, como `parse_v5` / `parse_template_based` |
 | Otra fuente de tráfico por dispositivo (SSH al router, conntrack) | un hilo que rellene `Device.flow`, como `netflow::run` |
 | Otro proveedor de test de velocidad | que `speed::list()` devuelva más `Server` (ping, descarga, subida) |
+| Otra fuente de redes WiFi | rama nueva en `wifi::scan` y un analizador de su salida (`parse_nmcli`, `parse_iw_scan`) |
+| Más servidores públicos de iperf3 | una línea en `iperf::SERVERS` |
 | Otro origen de contadores del router | rama nueva en `workers::gateway_loop` |
 
 ## Ayuda en la app

@@ -88,3 +88,9 @@ pub fn detect(pref: Option<&str>) -> Result<IfaceInfo, String> {
     let (ip, prefix) = addr_of(&name).ok_or(format!("la interfaz {name} no tiene dirección IPv4"))?;
     Ok(IfaceInfo { mac: mac_of(&name), name, ip, prefix, gateway: gw })
 }
+
+/// Dirección, puerta de enlace y MAC de una interfaz concreta (para mostrar datos de una conexión WiFi
+/// que no tiene por qué ser la interfaz principal).
+pub fn details(name: &str) -> (Option<(Ipv4Addr, u8)>, Option<Ipv4Addr>, [u8; 6]) {
+    (addr_of(name), default_route(Some(name)).map(|r| r.1), mac_of(name))
+}

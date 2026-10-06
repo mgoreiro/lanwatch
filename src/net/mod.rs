@@ -4,6 +4,7 @@
 pub mod arp;
 pub mod discovery;
 pub mod dns;
+pub mod iperf;
 pub mod fingerprint;
 pub mod iface;
 pub mod netflow;
@@ -12,3 +13,4 @@ pub mod oui;
 pub mod probe;
 pub mod snmp;
 pub mod speed;
+pub mod wifi;
