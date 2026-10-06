@@ -1,3 +1,16 @@
+lanwatch (0.4.0) stable; urgency=medium
+
+  * Nueva pestana iPerf3: servidores publicos para lanzar una prueba,
+    o modo servidor; modo, puerto y destino configurables. Si el
+    servidor o el puerto estan ocupados, ofrece esperar un minuto y
+    reintentar.
+  * Nueva pestana WiFi: redes visibles con la calidad de su senal,
+    datos de la conexion actual y detalle de cada red (Enter).
+  * About: el banner se oculta en ventanas bajas y aparece un
+    indicador de desplazamiento.
+
+ -- mgoreiro <mgoreiro@gmail.com>  Tue, 06 Oct 2026 20:00:00 +0000
+
 lanwatch (0.3.0) stable; urgency=medium
 
   * El colector entiende NetFlow v5, v9 e IPFIX (plantillas por

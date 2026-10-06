@@ -23,6 +23,9 @@ impl About {
     }
 }
 
+/// Alto mínimo del panel para mostrar el banner.
+const MIN_BANNER_HEIGHT: u16 = 20;
+
 const BANNER: [&str; 3] = [
     "┬  ┌─┐┌┐┌┬ ┬┌─┐┌┬┐┌─┐┬ ┬",
     "│  ├─┤│││││││├─┤ │ │  ├─┤",
@@ -61,9 +64,13 @@ impl Tab for About {
         let st = state::lock(&ctx.shared);
         let exe = std::env::current_exe().map(|p| p.display().to_string()).unwrap_or_else(|_| "?".into());
         let author = env!("CARGO_PKG_AUTHORS");
-        let mut l: Vec<Line> = BANNER.iter().map(|b| Line::from(Span::styled(format!("  {b}"), Style::new().fg(Color::Cyan)))).collect();
-        l.push(Line::raw(""));
-        l.push(Line::from(Span::styled(format!("  {}", env!("CARGO_PKG_DESCRIPTION")), Style::new().add_modifier(Modifier::ITALIC))));
+        // En ventanas bajas el banner ocupa el sitio de la información: solo se dibuja si sobra altura.
+        let mut l: Vec<Line> = Vec::new();
+        if area.height >= MIN_BANNER_HEIGHT {
+            l.extend(BANNER.iter().map(|b| Line::from(Span::styled(format!("  {b}"), Style::new().fg(Color::Cyan)))));
+            l.push(Line::raw(""));
+        }
+        l.push(Line::from(Span::styled(format!("  {}", env!("CARGO_PKG_DESCRIPTION")), Style::new().fg(Color::Gray))));
         l.push(Line::raw(""));
 
         l.push(title("Proyecto"));
@@ -108,7 +115,18 @@ impl Tab for About {
         l.push(row("Bibliotecas", "ratatui · ureq · serde · serde_json · libc (MIT / Apache-2.0)"));
         drop(st);
         let visible = area.height.saturating_sub(2);
-        self.scroll = self.scroll.min((l.len() as u16).saturating_sub(visible));
-        f.render_widget(Paragraph::new(l).scroll((self.scroll, 0)).block(Block::bordered().title(" About ")), area);
+        let max = (l.len() as u16).saturating_sub(visible);
+        self.scroll = self.scroll.min(max);
+        let mut block = Block::bordered().title(" About ");
+        let hint = match (self.scroll > 0, self.scroll < max) {
+            (true, true) => Some(" ↑↓ más "),
+            (true, false) => Some(" ↑ más "),
+            (false, true) => Some(" ↓ más "),
+            _ => None,
+        };
+        if let Some(h) = hint {
+            block = block.title_bottom(Line::from(Span::styled(h, Style::new().fg(Color::Yellow))).right_aligned());
+        }
+        f.render_widget(Paragraph::new(l).scroll((self.scroll, 0)).block(block), area);
     }
 }

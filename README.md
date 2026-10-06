@@ -15,17 +15,22 @@ En una Orange Pi Zero 3: **~3,6 MB de RAM** y **~1 % de un núcleo** de media co
 | 3 | **DNS** | Compara latencia y respuestas del DNS del sistema y de las IP que añadas (`i`). 12 dominios, primera consulta y repetición (caché). |
 | 4 | **Velocidad** | Latencia, jitter, descarga y subida contra servidores públicos (LibreSpeed + Cloudflare). Lista para elegir a mano o **modo automático** (`a`): el de menor latencia. |
 
-| 5 | **Ayuda** | Guía de la aplicación y, paso a paso, cómo activar **NetFlow** y SNMP en el router (con la IP real de esta máquina y el estado actual). El texto sale de `docs/AYUDA.md` y `docs/EDGEROUTER.md`. |
-| 6 | **About** | Datos del proyecto y del autor (de `Cargo.toml`) y estado de esta instalación: ejecutable, configuración, permisos, SNMP, NetFlow. |
+| 5 | **iPerf3** | Lista de servidores públicos de iperf3 para lanzar una prueba (`Enter`), o modo **servidor** (por defecto, puerto 5201) para que otro equipo mida contra este. Se puede elegir modo, puerto, destino y sentido; si el servidor o el puerto están ocupados, ofrece esperar 1 minuto y reintentar. Necesita el programa `iperf3`. |
+| 6 | **WiFi** | Redes visibles con la calidad de su señal (barra, dBm, canal, seguridad) y, arriba, los datos de la conexión actual. `Enter` abre el **detalle** de la red (fabricante del AP, canal, ancho, cifrado, congestión). Sin conexión no hay recuadro; sin WiFi, «WiFi no disponible». Usa `nmcli` o `iw`. |
+| 7 | **Ayuda** | Guía de la aplicación y, paso a paso, cómo activar **NetFlow** y SNMP en el router (con la IP real de esta máquina y el estado actual). El texto sale de `docs/AYUDA.md` y `docs/EDGEROUTER.md`. |
+| 8 | **About** | Datos del proyecto y del autor (de `Cargo.toml`) y estado de esta instalación: ejecutable, configuración, permisos, SNMP, NetFlow. |
 
-Teclas globales: `Tab` / `Shift+Tab` / `1`‑`6` cambian de pestaña, `q` sale. Cada pestaña muestra las suyas abajo.
+**Programas opcionales** (el `.deb` los recomienda): `iperf3` para la pestaña iPerf3, y `nmcli` (NetworkManager) o `iw`
+para la pestaña WiFi. Sin ellos, esas pestañas lo indican y el resto funciona igual.
+
+Teclas globales: `Tab` / `Shift+Tab` / `1`‑`8` cambian de pestaña, `q` sale. Cada pestaña muestra las suyas abajo.
 
 ## Instalación
 
 **Paquete Debian/Ubuntu/Raspberry Pi OS (recomendado)** — hay uno para `arm64` y otro para `amd64`:
 
 ```bash
-sudo apt install ./lanwatch_0.2.0_arm64.deb     # instala el binario, la página de manual y la documentación
+sudo apt install ./lanwatch_0.4.0_arm64.deb     # instala el binario, la página de manual y la documentación
 lanwatch
 ```
 

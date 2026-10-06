@@ -35,15 +35,16 @@ Version: $version
 Architecture: $arch
 Maintainer: mgoreiro <mgoreiro@gmail.com>
 Installed-Size: $size_kb
-Recommends: libcap2-bin
+Recommends: libcap2-bin, iperf3, iw
 Section: net
 Priority: optional
 Description: monitor de red en terminal de consumo mínimo
  Interfaz de terminal con pestañas: dispositivos de la red local (IP, MAC,
  fabricante, sistema operativo estimado, puertos abiertos y tráfico por equipo
- con NetFlow), tráfico de la puerta de enlace por SNMP, test de DNS y test de
- velocidad. Binario estático de pocos MB pensado para una Orange Pi o una
- Raspberry Pi. Incluye una pestaña de ayuda que explica cómo activar NetFlow y
+ con NetFlow), tráfico de la puerta de enlace por SNMP, test de DNS, test de
+ velocidad, cliente/servidor iperf3 y redes WiFi. Binario estático de pocos
+ MB pensado para una Orange Pi o una Raspberry Pi. Incluye una pestaña de
+ ayuda que explica cómo activar NetFlow y
  SNMP en el router. El paquete concede CAP_NET_RAW al binario para medir el
  TTL sin ejecutar como root.
 CONTROL
