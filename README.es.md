@@ -32,7 +32,7 @@ Teclas globales: `Tab` / `Shift+Tab` / `1`‑`8` cambian de pestaña, `q` sale. 
 **Paquete Debian/Ubuntu/Raspberry Pi OS (recomendado)** — hay uno para `arm64` y otro para `amd64`:
 
 ```bash
-sudo apt install ./lanwatch_0.4.0_arm64.deb     # instala el binario, la página de manual y la documentación
+sudo apt install ./lanwatch_0.4.1_arm64.deb     # instala el binario, la página de manual y la documentación
 lanwatch
 ```
 

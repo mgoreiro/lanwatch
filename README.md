@@ -32,7 +32,7 @@ Global keys: `Tab` / `Shift+Tab` / `1`-`8` switch tabs, `q` quits. Each tab show
 [latest release](https://github.com/mgoreiro/lanwatch/releases/latest) and install it:
 
 ```bash
-sudo apt install ./lanwatch_0.4.0_arm64.deb     # installs the binary, the man page and the documentation
+sudo apt install ./lanwatch_0.4.1_arm64.deb     # installs the binary, the man page and the documentation
 lanwatch
 ```
 

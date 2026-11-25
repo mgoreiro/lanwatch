@@ -5,8 +5,8 @@ router tiene que contárselo a lanwatch: esta máquina solo ve su propio tráfic
 el router envía por UDP un resumen de cada conexión y lanwatch lo suma por equipo. Para el tráfico
 total del router (pestaña Puerta de enlace) se usa **SNMP**.
 
-> Orientativo: escrito para un EdgeRouter X con EdgeOS 2.x y no verificado en tu router (no se ha
-> accedido a él). Comprueba cada comando en tu versión. En estos ejemplos, 192.168.1.232 es la IP de
+> Los pasos de EdgeRouter (EdgeOS 2.x) son orientativos y no están verificados en tu router; los de
+> OpenWrt sí se han probado en un router real. Comprueba cada comando en tu versión. En estos ejemplos, 192.168.1.232 es la IP de
 > esta máquina, la que ejecuta lanwatch.
 
 # Paso 1 · lanwatch escucha (ya está hecho)
@@ -14,7 +14,7 @@ total del router (pestaña Puerta de enlace) se usa **SNMP**.
 Por defecto lanwatch escucha NetFlow en el puerto UDP 2055: lo puedes ver arriba en «NetFlow ahora».
 Para cambiar el puerto, arranca con `--netflow <puerto>`; para apagarlo, `--netflow off`.
 
-# Paso 2 · activar NetFlow en el router
+# Paso 2 · activar NetFlow en el router (EdgeRouter)
 
 Entra en el router por SSH (la puerta de enlace) y escribe:
 
@@ -37,6 +37,71 @@ exit
   cifra puede tardar uno o dos minutos en aparecer. Solo se cuenta el tráfico IPv4.
 - Los dos `timeout` hacen que el router envíe los datos cada pocos segundos en vez de esperar a que
   cada conexión termine (por defecto puede tardar mucho y las cifras llegarían a trompicones).
+
+# Paso 2 · activar NetFlow en el router (OpenWrt)
+
+OpenWrt no exporta NetFlow de serie: se usa **softflowd**. Entra por SSH (`ssh root@192.168.1.1`) e instálalo:
+
+```
+opkg update && opkg install softflowd
+```
+
+(En OpenWrt 24.10 o posterior el gestor es `apk`: `apk update && apk add softflowd`.)
+
+El script de arranque que trae el paquete **ignora los timeouts**, y con los de fábrica una conexión tarda
+media hora o más en exportarse: lanwatch no recibiría nada. Por eso se crea un servicio propio con los
+timeouts bajos. Primero se desactiva el original:
+
+```
+/etc/init.d/softflowd stop
+/etc/init.d/softflowd disable
+```
+
+Después, el servicio nuevo (pega el bloque entero):
+
+```
+cat > /etc/init.d/softflowd-lw <<'EOF'
+#!/bin/sh /etc/rc.common
+START=99
+USE_PROCD=1
+
+start_service() {
+    procd_open_instance
+    procd_set_param command /usr/sbin/softflowd -d -i br-lan -m 8192 \
+        -n 192.168.1.232:2055 -v 9 \
+        -p /var/run/softflowd.pid -c /var/run/softflowd.ctl \
+        -t maxlife=60 -t expint=30 -t general=30 \
+        -t tcp=30 -t tcp.rst=10 -t tcp.fin=10 -t udp=30 -t icmp=30
+    procd_set_param respawn
+    procd_close_instance
+}
+EOF
+chmod +x /etc/init.d/softflowd-lw
+/etc/init.d/softflowd-lw enable
+/etc/init.d/softflowd-lw start
+```
+
+- `-i br-lan`: la interfaz de la **LAN**. Si capturas en la WAN solo verás la IP pública tras el NAT, no
+  los equipos. Pon una sola interfaz, o los flujos se contarán dos veces.
+- `-n 192.168.1.232:2055`: IP de esta máquina y puerto de lanwatch. Si cambian, edita esa línea y haz
+  `/etc/init.d/softflowd-lw restart`.
+- `-v 9`: v5, v9 e IPFIX valen. Solo se cuenta el tráfico IPv4.
+- Los `-t` hacen que los flujos caduquen y se envíen cada 30–60 s. Es lo que hace que lanwatch reciba datos.
+
+Para comprobar que el router exporta (tras un par de minutos):
+
+```
+softflowctl statistics | grep -E "active|expired|exported"
+tr '\0' ' ' < /proc/$(pidof softflowd)/cmdline; echo
+```
+
+`Flows exported` debe subir solo. Si `expired` sigue en 0 con flujos activos, la segunda orden te enseña con
+qué argumentos corre: tienen que aparecer los `-t` (`ps` los corta). Si `active` es 0, softflowd no ve
+tráfico: revisa el nombre de la interfaz con `ip link show`.
+
+> En OpenWrt, el «flow offloading» del cortafuegos (Red → Cortafuegos → Enrutamiento/NAT offloading) saca
+> las conexiones del kernel y softflowd no las ve completas: las cifras saldrán por debajo de la realidad.
+> Si no cuadran, desactívalo.
 
 # Paso 3 · comprobar que llega
 
